@@ -11,8 +11,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 
-parseSubstring :: Bool -> Text -> Maybe Int
-parseSubstring acceptWords t
+parseDigit :: Bool -> Text -> Maybe Int
+parseDigit acceptWords t
   | "0" `T.isPrefixOf` t = Just 0
   | "1" `T.isPrefixOf` t = Just 1
   | "2" `T.isPrefixOf` t = Just 2
@@ -41,18 +41,19 @@ getDigit :: ParseDirection -> Bool -> Text -> Maybe Int
 getDigit direction acceptWords t =
   let n = T.length t
       f = if direction == FromStart then T.drop else T.takeEnd
-      in foldr (<|>) Nothing $ map (\i -> parseSubstring acceptWords (f i t)) [0..n]
+      in foldr (<|>) Nothing $ map (\i -> parseDigit acceptWords (f i t)) [0..n]
 
-part :: Bool -> Text -> Int
-part acceptWords t = case (getDigit FromStart acceptWords t, getDigit FromEnd acceptWords t) of
-  (Just x, Just y) -> x * 10 + y
-  (m, n) -> error $ "Failed to parse line: `" <> T.unpack t <> "`. Got: " <> show (m, n)
+parseLine :: Bool -> Text -> Int
+parseLine acceptWords t =
+  case (getDigit FromStart acceptWords t, getDigit FromEnd acceptWords t) of
+    (Just x, Just y) -> x * 10 + y
+    (m, n) -> error $ "Failed to parse line: `" <> T.unpack t <> "`. Got: " <> show (m, n)
 
 part1 :: [Text] -> Int
-part1 = sum . map (part False)
+part1 = sum . map (parseLine False)
 
 part2 :: [Text] -> Int
-part2 = sum . map (part True)
+part2 = sum . map (parseLine True)
 
 main :: IO ()
 main = do
