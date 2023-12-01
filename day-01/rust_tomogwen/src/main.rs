@@ -38,11 +38,6 @@ fn part1(input_path: &Path) -> i32 {
 }
 
 
-fn find_substring_idx(line: &str, substring: &str) -> Vec<usize> {
-    line.match_indices(substring).map(|(i, _)|i).collect()
-}
-
-
 fn part2(input_path: &Path) -> i32 {
     // read the file line by line
     let file = File::open(input_path).expect("Could not open file");
@@ -69,7 +64,7 @@ fn part2(input_path: &Path) -> i32 {
             // if line.find is Some, then inner scope gets the result of find as position
             // otherwise it continues
             
-            let position: Vec<usize> = find_substring_idx(&line, &digit);
+            let position: Vec<usize> = line.match_indices(digit).map(|(i, _)|i).collect();
             if position.len() > 0 {
                 let min_pos = position.iter().min().expect("No min");
                 let max_pos = position.iter().max().expect("No max");
@@ -90,7 +85,7 @@ fn part2(input_path: &Path) -> i32 {
         }
         // same for char digits
         for (idx, digit) in char_digits.iter().enumerate() {
-            let position: Vec<usize> = find_substring_idx(&line, &digit);
+            let position: Vec<usize> = line.match_indices(digit).map(|(i, _)|i).collect();
             if position.len() > 0 {
                 let min_pos = position.iter().min().expect("No min");
                 let max_pos = position.iter().max().expect("No max");
