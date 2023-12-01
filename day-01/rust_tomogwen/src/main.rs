@@ -79,8 +79,6 @@ fn part2(input_path: &Path) -> i32 {
                     latest_position = *max_pos;
                     last_digit = Some(idx+1);
                 }
-            } else {
-                continue;
             }
         }
         // same for char digits
@@ -98,9 +96,7 @@ fn part2(input_path: &Path) -> i32 {
                     latest_position = *max_pos;
                     last_digit = Some(idx);
                 }
-            } else {
-                continue;
-            } 
+            }
         }
 
         // append the first two digits
