@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty.Extra (maximum1)
@@ -21,16 +20,11 @@ data RGB = RGB
   }
   deriving (Show)
 
-data Combi
-  = Red Int
-  | Green Int
-  | Blue Int
-  deriving (Show)
+instance Semigroup RGB where
+  (<>) (RGB r1 g1 b1) (RGB r2 g2 b2) = RGB (r1 + r2) (g1 + g2) (b1 + b2)
 
-addToRGB :: RGB -> Combi -> RGB
-addToRGB (RGB r g b) (Red r') = RGB (r + r') g b
-addToRGB (RGB r g b) (Green g') = RGB r (g + g') b
-addToRGB (RGB r g b) (Blue b') = RGB r g (b + b')
+instance Monoid RGB where
+  mempty = RGB 0 0 0
 
 data Game = Game
   { gameId :: Int,
@@ -60,29 +54,29 @@ lexeme = L.lexeme (L.space space1 empty empty)
 -- Parse e.g. "4 red, 3 green, 2 blue" -> RGB 4 3 2
 prgb :: Parser RGB
 prgb = do
-  let base = RGB 0 0 0
   combis <- some $ do
     n <- lexeme L.decimal
-    color <-
+    withColor <-
       lexeme
         ( choice
-            [ Red <$ string "red",
-              Green <$ string "green",
-              Blue <$ string "blue"
+            [ (\r -> RGB r 0 0) <$ string "red",
+              (\g -> RGB 0 g 0) <$ string "green",
+              (\b -> RGB 0 0 b) <$ string "blue"
             ]
         )
     _ <- optional (lexeme (char ','))
-    pure $ color n
-  pure $ foldl' addToRGB base combis
+    pure $ withColor n
+  _ <- optional (lexeme (char ';'))
+  pure $ mconcat combis
 
 -- Parse a line of the input
 pgame :: Parser Game
 pgame = do
   _ <- lexeme (string "Game")
-  gameId <- lexeme L.decimal
+  gameId <- L.decimal
   _ <- lexeme (char ':')
-  rev1 <- prgb <* optional (lexeme (char ';'))
-  revRest <- some $ prgb <* optional (lexeme (char ';'))
+  rev1 <- prgb
+  revRest <- some prgb
   eof
   pure $ Game gameId (rev1 NE.:| revRest)
 
