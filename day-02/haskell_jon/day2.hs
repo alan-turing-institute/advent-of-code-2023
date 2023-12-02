@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Control.Monad (void)
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
@@ -44,17 +43,17 @@ satisfies game (RGB r g b) =
   all (\(RGB r' g' b') -> r' <= r && g' <= g && b' <= b) (revealed game)
 
 power :: Game -> Int
-power game =
-  let rmin = maximum1 . NE.map red $ revealed game
-      gmin = maximum1 . NE.map green $ revealed game
-      bmin = maximum1 . NE.map blue $ revealed game
-   in rmin * gmin * bmin
+power (Game _ rv) =
+  let rmax = maximum1 . NE.map red $ rv
+      gmax = maximum1 . NE.map green $ rv
+      bmax = maximum1 . NE.map blue $ rv
+   in rmax * gmax * bmax
 
 -- * Parsing
 
 type Parser = Parsec Void Text
 
--- Consumes whitespace after a parser
+-- Modifies parsers to additionally consume trailing whitespace
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme (L.space space1 empty empty)
 
