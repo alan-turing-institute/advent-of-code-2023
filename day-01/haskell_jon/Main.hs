@@ -1,8 +1,3 @@
-#!/usr/bin/env cabal
-{- cabal:
-build-depends: base, text
--}
-
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Applicative ((<|>))
@@ -35,13 +30,13 @@ parseDigit acceptWords t
   | acceptWords && "nine" `T.isPrefixOf` t = Just 9
   | otherwise = Nothing
 
-data ParseDirection = FromStart | FromEnd deriving Eq
+data ParseDirection = FromStart | FromEnd deriving (Eq)
 
 getDigit :: ParseDirection -> Bool -> Text -> Maybe Int
 getDigit direction acceptWords t =
   let n = T.length t
       f = if direction == FromStart then T.drop else T.takeEnd
-      in foldr (<|>) Nothing $ map (\i -> parseDigit acceptWords (f i t)) [0..n]
+   in foldr (<|>) Nothing $ map (\i -> parseDigit acceptWords (f i t)) [0 .. n]
 
 parseLine :: Bool -> Text -> Int
 parseLine acceptWords t =

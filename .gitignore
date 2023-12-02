@@ -1,3 +1,6 @@
 .venv
 
 target/
+
+# haskell build output
+**/dist-newstyle
