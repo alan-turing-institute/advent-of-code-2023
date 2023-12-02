@@ -25,8 +25,14 @@ maxes: Dict[str, int] = {
 }
 
 total: int = 0
+powersum: int = 0
 
 for i, game in enumerate(lines):
+    mins = {
+        "red": 0,
+        "green": 0,
+        "blue": 0
+    }
     sets: List[str] = game.split(": ")[1]
     valid: bool = True
     end: bool = False
@@ -36,11 +42,15 @@ for i, game in enumerate(lines):
             for cube in cubes:
                 number: int = int(cube.split(" ")[0])
                 colour: str = cube.split(" ")[1]
+                if number > mins[colour]:
+                    mins[colour] = number
                 if number > maxes[colour]:
                     valid = False
         end = True
 
     if valid:
         total += i+1
+    powersum += mins["red"] * mins["green"] * mins["blue"]
 
-print(total)
+print("Part 1: " + str(total))
+print("Part 2: " + str(powersum))
