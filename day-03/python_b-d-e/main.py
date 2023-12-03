@@ -52,10 +52,8 @@ def part_one(data):
                     while j<len(row) and row[j].isdigit():
                         j += 1
                     # check if any digit has adjacent symbol
-                    adjacent = False
                     for k in range(i, j):
                         if check_adjacent_symbol(data, k, h):
-                            adjacent = True
                             total += int(''.join(row[i:j]))
                             i = k
                             break
