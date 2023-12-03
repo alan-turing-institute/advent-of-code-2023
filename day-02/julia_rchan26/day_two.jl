@@ -3,7 +3,10 @@ using Test
 test_input = readlines("test_input.txt")
 input = readlines("input.txt")
 
-function check_colours(game_record::Union{SubString, String}, available::Dict{String, Int64})::Bool
+function check_colours(
+    game_record::Union{SubString,String},
+    available::Dict{String,Int64},
+)::Bool
     grabs = split(game_record, "; ")
     for grab in grabs
         for (quantity, colour) in [split(x, " ") for x in split(grab, ", ")]
@@ -15,10 +18,8 @@ function check_colours(game_record::Union{SubString, String}, available::Dict{St
     return true
 end
 
-function obtain_minimum_required(game_record::Union{SubString, String})::Dict{String, Int64}
-    minimum_required = Dict{String, Int64}(
-        "red" => 0, "green" => 0, "blue" => 0
-    )
+function obtain_minimum_required(game_record::Union{SubString,String})::Dict{String,Int64}
+    minimum_required = Dict{String,Int64}("red" => 0, "green" => 0, "blue" => 0)
     grabs = split(game_record, "; ")
     for grab in grabs
         for (quantity, colour) in [split(x, " ") for x in split(grab, ", ")]
@@ -34,9 +35,7 @@ function part_one(input::Vector{String})::Int64
     total = 0
     for line in input
         game, game_record = split(line, ": ")
-        available = Dict{String, Int64}(
-            "red" => 12, "green" => 13, "blue" => 14
-        )
+        available = Dict{String,Int64}("red" => 12, "green" => 13, "blue" => 14)
         if check_colours(game_record, available)
             game_id = parse(Int64, split(game, " ")[2])
             total += game_id
