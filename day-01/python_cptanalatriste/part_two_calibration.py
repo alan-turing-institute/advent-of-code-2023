@@ -1,4 +1,4 @@
-import part_one
+from python_cptanalatriste import part_one_calibration
 from typing import Optional
 
 
@@ -57,4 +57,4 @@ def get_calibration_value(line: str) -> int:
 
 
 if __name__ == "__main__":
-    part_one.main(parsing_function=get_calibration_value)
+    part_one_calibration.main(parsing_function=get_calibration_value)

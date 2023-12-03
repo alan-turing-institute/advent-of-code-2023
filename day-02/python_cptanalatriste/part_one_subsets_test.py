@@ -1,4 +1,4 @@
-from part_one import Subset, parse_line, is_possible
+from python_cptanalatriste.part_one_subsets import Subset, parse_line, is_possible
 
 
 def test_subsets() -> None:

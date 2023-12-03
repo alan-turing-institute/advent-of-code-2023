@@ -1,4 +1,4 @@
-from part_one import Subset, parse_line
+from python_cptanalatriste.part_one_subsets import Subset, parse_line
 
 
 def calculate_minimum_bag(subsets: list[Subset]) -> Subset:

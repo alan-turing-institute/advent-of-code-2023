@@ -1,5 +1,5 @@
-from part_one import parse_line, Subset
-from part_two import calculate_minimum_bag
+from python_cptanalatriste.part_one_subsets import parse_line, Subset
+from python_cptanalatriste.part_two_subsets import calculate_minimum_bag
 
 
 def test_minimum_bag() -> None:
