@@ -17,21 +17,24 @@ end
 
 function fix_line(line::String)::String
     # deal with some edge cases where two numbers share character
-    return replace(line,
+    return replace(
+        line,
         "twone" => "twoone",
         "oneight" => "oneeight",
         "threeight" => "threeeight",
         "fiveight" => "fiveeight",
         "sevenine" => "sevennine",
         "eightwo" => "eighttwo",
-        "eighthree" => "eightthree")
+        "eighthree" => "eightthree",
+    )
 end
 
 function replace_numbers(line::String)::String
     # add characters where two numbers share character
     line = fix_line(line)
     # replace numbers with digits
-    return replace(line,
+    return replace(
+        line,
         "one" => "1",
         "two" => "2",
         "three" => "3",
@@ -40,7 +43,8 @@ function replace_numbers(line::String)::String
         "six" => "6",
         "seven" => "7",
         "eight" => "8",
-        "nine" => "9")
+        "nine" => "9",
+    )
 end
 
 function part_two(document::Vector{String})::Int64
