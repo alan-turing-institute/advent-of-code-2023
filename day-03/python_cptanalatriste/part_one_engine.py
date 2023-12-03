@@ -1,8 +1,10 @@
 from typing import Optional
 
+DIGITS: list[str] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
 
 def is_symbol(character: str) -> bool:
-    return not character.isdigit() and character != "."
+    return (character not in DIGITS) and character != "."
 
 
 def look_for_symbol(line: str, index_start: int, index_end: int) -> bool:
@@ -20,7 +22,10 @@ def check_number(
     lines: list[str],
     part_numbers: list[int],
 ) -> None:
-    # Check top-line
+    line_with_number: str = lines[line_index]
+    number: int = int(
+        line_with_number[number_start_index : number_end_index + 1]
+    )
     for target_line_index in range(line_index - 1, line_index + 2):
         if 0 <= target_line_index < len(lines):
             target_line: str = lines[target_line_index]
@@ -29,15 +34,11 @@ def check_number(
             index_end: int = min(len(target_line) - 1, number_end_index + 1)
 
             if look_for_symbol(target_line, index_start, index_end):
-                line_with_number: str = lines[line_index]
-                part_numbers.append(
-                    int(
-                        line_with_number[
-                            number_start_index : number_end_index + 1
-                        ]
-                    )
-                )
+                part_numbers.append(number)
+                print(f"Line {line_index + 1}: Adding {number=}")
                 return
+
+    print(f"Line {line_index + 1}: Ignoring {number=}")
 
 
 def get_part_numbers(lines: list[str]) -> list[int]:
@@ -46,10 +47,10 @@ def get_part_numbers(lines: list[str]) -> list[int]:
         number_start_index: Optional[int] = None
 
         for character_index, character in enumerate(line):
-            if character.isdigit() and number_start_index is None:
+            if character in DIGITS and number_start_index is None:
                 number_start_index = character_index
 
-            if not character.isdigit() and number_start_index is not None:
+            if (character not in DIGITS) and number_start_index is not None:
                 number_end_index: int = character_index - 1
                 check_number(
                     line_index,
@@ -63,7 +64,7 @@ def get_part_numbers(lines: list[str]) -> list[int]:
 
             # Line finished. Check if there's a character pending.
             if (
-                character.isdigit()
+                character in DIGITS
                 and number_start_index is not None
                 and character_index == len(line) - 1
             ):

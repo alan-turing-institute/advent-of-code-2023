@@ -52,3 +52,18 @@ def test_grid_from_reddit() -> None:
 
     part_numbers: list[int] = part_one_engine.get_part_numbers(lines)
     assert 413 == sum(part_numbers)
+    assert 90 in part_numbers
+    assert 12 in part_numbers
+    assert 60 not in part_numbers
+
+
+def test_obvious_one() -> None:
+    lines: list[str] = [
+        "........",
+        ".24..4..",
+        "......*.",
+    ]
+
+    part_numbers: list[int] = part_one_engine.get_part_numbers(lines)
+    assert 24 not in part_numbers
+    assert 4 in part_numbers
