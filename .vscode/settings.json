@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "day-03/python_cptanalatriste"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
