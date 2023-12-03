@@ -1,6 +1,10 @@
 .venv
 
 target/
+__pycache__/
 
 # haskell build output
 **/dist-newstyle
+
+*.ipynb_checkpoints
+*rchan.ipynb
