@@ -81,15 +81,23 @@ def get_part_numbers(lines: list[str]) -> list[int]:
     return part_numbers
 
 
-def main():
-    lines: str = []
-    with open("input.txt") as input_file:
+def get_lines(file_name: str) -> list[str]:
+    lines: list[str] = []
+    with open(file_name) as input_file:
         while line := input_file.readline():
-            lines.append(line)
+            lines.append(line.rstrip("\n"))
 
+    return lines
+
+
+def process_file(file_name: str) -> int:
+    lines: list[str] = get_lines(file_name)
     part_numbers: list[int] = get_part_numbers(lines)
+    return sum(part_numbers)
 
-    print(f"answer={sum(part_numbers)}")
+
+def main():
+    print(f"answer={process_file('input.txt')}")
 
 
 if __name__ == "__main__":
