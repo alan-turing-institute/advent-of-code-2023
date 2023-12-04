@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Monad (void)
-import Data.Either (lefts, rights)
+import Data.Either (partitionEithers)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -55,32 +55,32 @@ pcoord = do
   pos <- getSourcePos
   pure $ Coord (unPos $ sourceLine pos) (unPos $ sourceColumn pos)
 
-pdot :: Parser ()
-pdot = void (char '.') <|> space1
+pFiller :: Parser ()
+pFiller = void (char '.') <|> space1
 
-psymb :: Parser Symbol
-psymb = do
+pSymb :: Parser Symbol
+pSymb = do
   ch <- asciiChar
   Coord x y <- pcoord
   pure $ Symbol ch (Coord x (y - 1))
 
-pnum :: Parser PartNum
-pnum = do
+pNum :: Parser PartNum
+pNum = do
   n <- L.decimal
   Coord x y <- pcoord
   pure $ PartNum n (Coord x (y - getLength n))
 
 -- | Parse the grid into a list of PartNums and Symbols
-pgrid :: Parser ([PartNum], [Symbol])
-pgrid = do
-  void $ many pdot
-  res <- some $ ((Left <$> pnum) <|> (Right <$> psymb)) <* many pdot
+pGrid :: Parser ([PartNum], [Symbol])
+pGrid = do
+  void $ many pFiller
+  res <- some $ ((Left <$> pNum) <|> (Right <$> pSymb)) <* many pFiller
   eof
-  pure (lefts res, rights res)
+  pure $ partitionEithers res
 
 parseInput :: Text -> ([PartNum], [Symbol])
 parseInput t =
-  case parse pgrid "" t of
+  case parse pGrid "" t of
     Left err -> error $ errorBundlePretty err
     Right res -> res
 

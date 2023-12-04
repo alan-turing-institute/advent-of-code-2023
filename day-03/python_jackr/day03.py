@@ -86,7 +86,7 @@ def part_2(data):
     total = 0
     for row in range(len(data)):
         for column in range(len(data[0])):
-            if is_symbol(data[row][column]):
+            if data[row][column] == "*":
                 numbers = get_adjacent_numbers(row, column, data)
                 if len(numbers) == 2:
                     total += numbers[0] * numbers[1]
