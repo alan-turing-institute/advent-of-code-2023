@@ -16,17 +16,22 @@ dat <- dat |>
 # Part 1
 n_win <- lapply(dat, function(x) sum(x[[1]] %in% x[[2]])) |> Reduce(c, x=_)
 n_win |>
-  sapply(function(x) (1*2^(x-1))*(x>0)) |>
+  sapply(function(x) (x>0)*2^(x-1)) |>
   sum()
 
 # Part 2
-recurse_count_cards <- function(vec, index) {
+get_win_cards <- function(vec, index) {
   wins <- vec[index]
-  if(wins > 0) next_cards <- (index+1):(index+wins)
-  else return(1)
-  return(1 + sum(sapply(next_cards, function(x) recurse_count_cards(vec, x))))
+  if(wins > 0) return((index+1):(index+wins))
+  return(wins)
+}
+inds_to_counts <- function(l, counts, index) {
+  counts[index] <- 1 + sum(counts[l[[index]]])
+  if (index == 1) return(counts)
+  return(inds_to_counts(l, counts, index-1))
 }
 
-sapply(1:length(n_win), function(x) recurse_count_cards(n_win, x)) |>
-  sum()
+win_indices <- lapply(1:length(n_win), function(x) get_win_cards(n_win, x))
+counts <- inds_to_counts(win_indices, rep(0, length(win_indices)), length(win_indices))
+sum(counts)
 
