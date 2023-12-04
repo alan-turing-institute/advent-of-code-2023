@@ -2,7 +2,7 @@ cabal-version: 3.0
 name: day3
 version: 0.1.0.0
 
-executable day2
+executable day3
     main-is: day3.hs
     build-depends: base, text, megaparsec
     hs-source-dirs:   .
