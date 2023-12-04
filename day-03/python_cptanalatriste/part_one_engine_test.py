@@ -1,21 +1,21 @@
 from python_cptanalatriste import part_one_engine
 
+INPUT_AS_LINES: list[str] = [
+    "467..114..",
+    "...*......",
+    "..35..633.",
+    "......#...",
+    "617*......",
+    ".....+.58.",
+    "..592.....",
+    "......755.",
+    "...$.*....",
+    ".664.598..",
+]
+
 
 def test_get_part_numbers() -> None:
-    lines: list[str] = [
-        "467..114..",
-        "...*......",
-        "..35..633.",
-        "......#...",
-        "617*......",
-        ".....+.58.",
-        "..592.....",
-        "......755.",
-        "...$.*....",
-        ".664.598..",
-    ]
-
-    part_numbers: list[int] = part_one_engine.get_part_numbers(lines)
+    part_numbers: list[int] = part_one_engine.get_part_numbers(INPUT_AS_LINES)
 
     assert 467 in part_numbers
     assert 114 not in part_numbers

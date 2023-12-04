@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Callable
 
 DIGITS: list[str] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
@@ -41,42 +41,52 @@ def check_number(
     print(f"Line {line_index + 1}: Ignoring {number=}")
 
 
+def process_line(
+    line_index: int,
+    lines: list[str],
+    result_list: list,
+    processing_function: Callable,
+) -> None:
+    number_start_index: Optional[int] = None
+    line: str = lines[line_index]
+
+    for character_index, character in enumerate(line):
+        if character in DIGITS and number_start_index is None:
+            number_start_index = character_index
+
+        if (character not in DIGITS) and number_start_index is not None:
+            number_end_index: int = character_index - 1
+            processing_function(
+                line_index,
+                number_start_index,
+                number_end_index,
+                lines,
+                result_list,
+            )
+
+            number_start_index = None
+
+        # Line finished. Check if there's a character pending.
+        if (
+            character in DIGITS
+            and number_start_index is not None
+            and character_index == len(line) - 1
+        ):
+            number_end_index = character_index
+            processing_function(
+                line_index,
+                number_start_index,
+                number_end_index,
+                lines,
+                result_list,
+            )
+            number_start_index = None
+
+
 def get_part_numbers(lines: list[str]) -> list[int]:
     part_numbers: list[int] = []
     for line_index, line in enumerate(lines):
-        number_start_index: Optional[int] = None
-
-        for character_index, character in enumerate(line):
-            if character in DIGITS and number_start_index is None:
-                number_start_index = character_index
-
-            if (character not in DIGITS) and number_start_index is not None:
-                number_end_index: int = character_index - 1
-                check_number(
-                    line_index,
-                    number_start_index,
-                    number_end_index,
-                    lines,
-                    part_numbers,
-                )
-
-                number_start_index = None
-
-            # Line finished. Check if there's a character pending.
-            if (
-                character in DIGITS
-                and number_start_index is not None
-                and character_index == len(line) - 1
-            ):
-                number_end_index = character_index
-                check_number(
-                    line_index,
-                    number_start_index,
-                    number_end_index,
-                    lines,
-                    part_numbers,
-                )
-                number_start_index = None
+        process_line(line_index, lines, part_numbers, check_number)
 
     return part_numbers
 
