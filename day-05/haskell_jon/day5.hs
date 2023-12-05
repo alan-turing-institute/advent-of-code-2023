@@ -33,30 +33,29 @@ newtype Humidity = Humidity Int deriving (Show, Eq, Ord, Num, Enum, Real, Integr
 
 newtype Location = Location Int deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-subInt :: (Integral a) => a -> a -> Int
-subInt a b = fromIntegral a - fromIntegral b
-
-addInt :: (Integral a, Integral b) => a -> b -> a
-addInt i a = fromIntegral i + fromIntegral a
+-- Proxy types.
+newtype Shift src dst = Shift Int deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
 data Interval src = Interval
-  { start :: src,
-    end :: src
+  { start :: !src,
+    end :: !src
   }
   deriving (Show, Eq, Ord)
 
 data IntervalMap src dst = IntervalMap
-  { srcStart :: src,
-    srcEnd :: src, -- start + length - 1, i.e. inclusive
-    dstStart :: dst
+  { srcStart :: !src,
+    srcEnd :: !src, -- start + length - 1, i.e. inclusive
+    dstStart :: !dst
   }
   deriving (Show, Eq, Ord)
 
-shift :: (Integral src, Integral dst) => IntervalMap src dst -> Int
+shift :: (Integral src, Integral dst) => IntervalMap src dst -> Shift src dst
 shift m = fromIntegral (dstStart m) - fromIntegral (srcStart m)
 
-shiftInterval :: (Integral src, Integral dst) => Int -> Interval src -> Interval dst
-shiftInterval i (Interval s e) = Interval (fromIntegral $ addInt s i) (fromIntegral $ addInt e i)
+shiftInterval :: (Integral src, Integral dst) => Shift src dst -> Interval src -> Interval dst
+shiftInterval shift (Interval s e) =
+  let shift' = fromIntegral shift
+   in Interval (fromIntegral s + shift') (fromIntegral e + shift')
 
 shiftIntervalUsing :: (Integral src, Integral dst) => IntervalMap src dst -> Interval src -> Interval dst
 shiftIntervalUsing im = shiftInterval (shift im)
@@ -65,7 +64,7 @@ isValid :: (Ord src) => Interval src -> Bool
 isValid (Interval s e) = s <= e
 
 remapOverlap ::
-  (Show src, Show dst, Integral src, Integral dst) =>
+  (Integral src, Integral dst) =>
   IntervalMap src dst ->
   Interval src ->
   ([Interval src], [Interval dst])
@@ -92,7 +91,7 @@ remapOverlap im@(IntervalMap ss se ds) i@(Interval s e) =
        in (filter isValid srcs, filter isValid dsts)
 
 transformWith ::
-  (Show src, Show dst, Integral src, Integral dst) =>
+  (Integral src, Integral dst) =>
   IntervalMap src dst ->
   [Interval src] ->
   ([Interval src], [Interval dst])
@@ -103,7 +102,7 @@ transformWith m srcs =
    in foldl' f ([], []) srcs
 
 transformWith' ::
-  (Show src, Show dst, Integral src, Integral dst) =>
+  (Integral src, Integral dst) =>
   [IntervalMap src dst] ->
   [Interval src] ->
   ([Interval src], [Interval dst])
@@ -117,7 +116,7 @@ moveSrcToDst :: (Integral src, Integral dst) => ([Interval src], [Interval dst])
 moveSrcToDst (is, os) = map (shiftInterval 0) is ++ os
 
 transform ::
-  (Show src, Show dst, Integral src, Integral dst) =>
+  (Integral src, Integral dst) =>
   [IntervalMap src dst] ->
   [Interval src] ->
   [Interval dst]
