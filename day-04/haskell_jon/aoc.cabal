@@ -1,9 +1,9 @@
 cabal-version: 3.0
-name: day4
+name: aoc
 version: 0.1.0.0
 
-executable day4
-    main-is: Main.hs
+executable aoc
+    main-is: day4.hs
     build-depends: base, text, megaparsec, containers
-    hs-source-dirs:   .
+    hs-source-dirs: .
     default-language: Haskell2010
