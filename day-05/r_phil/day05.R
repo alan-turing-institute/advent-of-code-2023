@@ -1,4 +1,4 @@
-file <- "test.txt"
+file <- "input.txt"
 input <- readChar(file, file.info(file)$size)
 
 # Fn that given an input string,
@@ -83,21 +83,22 @@ range_to_ranges <- function(r, maps, index) {
       )
     }) |> Reduce(rbind, x=_)
     
-    # Add any 'hanging changes'
+    # Add any 'hanging overlaps'
     rdf <- rdf[order(rdf$start),]
-    
     if (nrow(rdf) > 1) {
       extras <- data.frame(start=numeric(0), end=numeric(0), coef=numeric(0))
       for (i in 1:(nrow(rdf)-1)) {
-        if (rdf[i,"end"] + 1 < rdf[i+1, "start"]) {
+        if ((rdf[i,"end"] + 1) < rdf[i+1, "start"]) {
           extras <- rbind(extras,
                           data.frame(
-                            start=rdf[i,"end"] + 1,
-                            end=rdf[i+1,"start"] - 1,
+                            start=(rdf[i,"end"] + 1),
+                            end=(rdf[i+1,"start"] - 1),
                             coef=0
                           ))
         }
       }
+      rdf <- rbind(extras, rdf)
+      rdf <- rdf[order(rdf$start),]
     }
 
     if (r[1] < rdf[1,"start"]) {
@@ -105,7 +106,7 @@ range_to_ranges <- function(r, maps, index) {
     }
 
     if (r[2] > rdf[nrow(rdf),"end"]) {
-      rdf <- rbind(data.frame(start=rdf[nrow(rdf),"end"]+1, end=r[2], coef=0), rdf)
+      rdf <- rbind(rdf, data.frame(start=rdf[nrow(rdf),"end"]+1, end=r[2], coef=0))
     }
     
     rdf$start <- rdf$start + rdf$coef
@@ -120,9 +121,7 @@ range_to_ranges <- function(r, maps, index) {
 }
 
 
-sapply(1:length(seeds2), function(x) range_to_ranges(as.numeric(seeds2[x,]), maps, 1)) |>
+sapply(1:nrow(seeds2), function(x) range_to_ranges(as.numeric(seeds2[x,]), maps, 1)) |>
   Reduce(c, x=_) |>
   min()
-
-range_to_ranges(as.numeric(seeds2[4,]), maps, 1)
 
