@@ -1,5 +1,6 @@
 .venv
 input.txt
+test_input.txt
 
 target/
 __pycache__/
