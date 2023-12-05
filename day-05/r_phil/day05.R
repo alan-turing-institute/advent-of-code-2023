@@ -50,7 +50,6 @@ get_seeds <- function(seeds) {
 
 seeds2 <- get_seeds(seeds)
 
-
 range_to_ranges <- function(r, maps, index) {
   if (index == 8) {
     return(r[1])
@@ -59,9 +58,8 @@ range_to_ranges <- function(r, maps, index) {
   start <- maps[[index]]$input_start
   end <- maps[[index]]$input_end
   
+  # Case one: full overlap
   test1 <- r[1] > start & r[2] < end
-  
-  # print(paste0("Test 1:", any(test1)))
   if (any(test1)) {
     m <- maps[[index]][test1,]
     coef <- m$output_start - m$input_start
@@ -69,12 +67,13 @@ range_to_ranges <- function(r, maps, index) {
     return(range_to_ranges(new_r, maps, index+1))
   }
   
+  # Case two: partial overlaps (full underlap, left, right)
   test2 <- !(r[1] > end | r[2] < start)
   if (any(test2)) {
     # Get all partially overlapping ranges
     m <- maps[[index]][test2,]
     
-    # Find overlaps that correspond to 
+    # Find partial overlaps
     rdf <- lapply(1:nrow(m), function(x) {
       data.frame(
         start=max(m[x,]$input_start, r[1]),
@@ -85,30 +84,10 @@ range_to_ranges <- function(r, maps, index) {
     
     # Add any 'hanging overlaps'
     rdf <- rdf[order(rdf$start),]
-    if (nrow(rdf) > 1) {
-      extras <- data.frame(start=numeric(0), end=numeric(0), coef=numeric(0))
-      for (i in 1:(nrow(rdf)-1)) {
-        if ((rdf[i,"end"] + 1) < rdf[i+1, "start"]) {
-          extras <- rbind(extras,
-                          data.frame(
-                            start=(rdf[i,"end"] + 1),
-                            end=(rdf[i+1,"start"] - 1),
-                            coef=0
-                          ))
-        }
-      }
-      rdf <- rbind(extras, rdf)
-      rdf <- rdf[order(rdf$start),]
-    }
-
-    if (r[1] < rdf[1,"start"]) {
-      rdf <- rbind(data.frame(start=r[1], end=rdf[1,"start"]-1, coef=0), rdf)
-    }
-
-    if (r[2] > rdf[nrow(rdf),"end"]) {
-      rdf <- rbind(rdf, data.frame(start=rdf[nrow(rdf),"end"]+1, end=r[2], coef=0))
-    }
+    if (r[1] < rdf[1,"start"]) rdf <- rbind(data.frame(start=r[1], end=rdf[1,"start"]-1, coef=0), rdf)
+    if (r[2] > rdf[nrow(rdf),"end"]) rdf <- rbind(rdf, data.frame(start=rdf[nrow(rdf),"end"]+1, end=r[2], coef=0))
     
+    # Add coefs to translate into output ranges
     rdf$start <- rdf$start + rdf$coef
     rdf$end <- rdf$end + rdf$coef
     
@@ -117,9 +96,9 @@ range_to_ranges <- function(r, maps, index) {
     }) |> Reduce(c, x=_))
   }
   
+  # Final case, no overlaps: just pass the range on
   return(range_to_ranges(r, maps, index+1))
 }
-
 
 sapply(1:nrow(seeds2), function(x) range_to_ranges(as.numeric(seeds2[x,]), maps, 1)) |>
   Reduce(c, x=_) |>
