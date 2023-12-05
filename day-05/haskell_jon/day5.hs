@@ -1,7 +1,6 @@
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 
 import Data.List (foldl')
 import Data.Maybe (catMaybes)
@@ -154,14 +153,14 @@ pMap t = do
     pure $ IntervalMap srcStart srcEnd dstStart
 
 data ParsedInput = ParsedInput
-  { seeds :: [Interval Seed],
-    seedSoilMaps :: [IntervalMap Seed Soil],
-    soilFertilizerMaps :: [IntervalMap Soil Fertilizer],
-    fertilizerWaterMaps :: [IntervalMap Fertilizer Water],
-    waterLightMaps :: [IntervalMap Water Light],
-    lightTemperatureMaps :: [IntervalMap Light Temperature],
-    temperatureHumidityMaps :: [IntervalMap Temperature Humidity],
-    humidityLocationMaps :: [IntervalMap Humidity Location]
+  { seeds :: ![Interval Seed],
+    seedSoilMaps :: ![IntervalMap Seed Soil],
+    soilFertilizerMaps :: ![IntervalMap Soil Fertilizer],
+    fertilizerWaterMaps :: ![IntervalMap Fertilizer Water],
+    waterLightMaps :: ![IntervalMap Water Light],
+    lightTemperatureMaps :: ![IntervalMap Light Temperature],
+    temperatureHumidityMaps :: ![IntervalMap Temperature Humidity],
+    humidityLocationMaps :: ![IntervalMap Humidity Location]
   }
   deriving (Show, Eq, Ord)
 
@@ -170,13 +169,13 @@ data Part = Part1 | Part2 deriving (Eq)
 pInput :: Part -> Parser ParsedInput
 pInput pt = do
   seeds <- if pt == Part1 then pSeedsPart1 else pSeedsPart2
-  seedSoilMaps <- pMap @Seed @Soil "seed-to-soil map:"
-  soilFertilizerMaps <- pMap @Soil @Fertilizer "soil-to-fertilizer map:"
-  fertilizerWaterMaps <- pMap @Fertilizer @Water "fertilizer-to-water map:"
-  waterLightMaps <- pMap @Water @Light "water-to-light map:"
-  lightTemperatureMaps <- pMap @Light @Temperature "light-to-temperature map:"
-  temperatureHumidityMaps <- pMap @Temperature @Humidity "temperature-to-humidity map:"
-  humidityLocationMaps <- pMap @Humidity @Location "humidity-to-location map:"
+  seedSoilMaps <- pMap "seed-to-soil map:"
+  soilFertilizerMaps <- pMap "soil-to-fertilizer map:"
+  fertilizerWaterMaps <- pMap "fertilizer-to-water map:"
+  waterLightMaps <- pMap "water-to-light map:"
+  lightTemperatureMaps <- pMap "light-to-temperature map:"
+  temperatureHumidityMaps <- pMap "temperature-to-humidity map:"
+  humidityLocationMaps <- pMap "humidity-to-location map:"
   pure $ ParsedInput {..}
 
 parseInput :: Part -> Text -> ParsedInput
