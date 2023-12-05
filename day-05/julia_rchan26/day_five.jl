@@ -137,7 +137,8 @@ Test.@test day_five(test_input, false) == 35
 Test.@test day_five(test_input, true) == 46
 
 # Part One
-println("Part One: ", day_five(input, false))
+# ☠️☠️☠️ is actually faster that day_five for part one
+println("Part One: ", ☠️☠️☠️(input, false))
 
 # Part Two
 # ☠️☠️☠️(input, true) would probably take 46 hours ☠️☠️☠️
