@@ -13,20 +13,22 @@ def string_to_set(line: str) -> set[int]:
     }
 
 
-def parse_line(line: str) -> tuple[set[int], set[int]]:
-    _, all_numbers = line.split(":")
+def parse_line(line: str) -> tuple[int, set[int], set[int]]:
+    card_and_number, all_numbers = line.split(":")
+    card_number: int = int(card_and_number[5:])
+
     winning_numbers_string, your_numbers_string = all_numbers.split("|")
     winning_numbers: set[int] = string_to_set(winning_numbers_string)
     your_numbers: set[int] = string_to_set(your_numbers_string)
 
-    return winning_numbers, your_numbers
+    return card_number, winning_numbers, your_numbers
 
 
 def process_input_file(file_name: str) -> int:
     answer: int = 0
     with open(file_name) as input_file:
         while line := input_file.readline():
-            winning_numbers, your_numbers = parse_line(line.rstrip("\n"))
+            _, winning_numbers, your_numbers = parse_line(line.rstrip("\n"))
             card_points: int = calculate_points(winning_numbers, your_numbers)
             answer += card_points
             print(f"{card_points=} {line}")

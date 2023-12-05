@@ -11,28 +11,31 @@ LINES: list[str] = [
 
 
 def test_parse_line() -> None:
-    winning_numbers, your_numbers = part_one_cards.parse_line(LINES[0])
+    card_number, winning_numbers, your_numbers = part_one_cards.parse_line(
+        LINES[0]
+    )
+    assert 1 == card_number
     assert {41, 48, 83, 86, 17} == winning_numbers
     assert {83, 86, 6, 31, 17, 9, 48, 53} == your_numbers
 
 
 def test_calculate_points() -> None:
-    winning_numbers, your_numbers = part_one_cards.parse_line(LINES[0])
+    _, winning_numbers, your_numbers = part_one_cards.parse_line(LINES[0])
     assert 8 == part_one_cards.calculate_points(winning_numbers, your_numbers)
 
-    winning_numbers, your_numbers = part_one_cards.parse_line(LINES[1])
+    _, winning_numbers, your_numbers = part_one_cards.parse_line(LINES[1])
     assert 2 == part_one_cards.calculate_points(winning_numbers, your_numbers)
 
-    winning_numbers, your_numbers = part_one_cards.parse_line(LINES[2])
+    _, winning_numbers, your_numbers = part_one_cards.parse_line(LINES[2])
     assert 2 == part_one_cards.calculate_points(winning_numbers, your_numbers)
 
-    winning_numbers, your_numbers = part_one_cards.parse_line(LINES[3])
+    _, winning_numbers, your_numbers = part_one_cards.parse_line(LINES[3])
     assert 1 == part_one_cards.calculate_points(winning_numbers, your_numbers)
 
-    winning_numbers, your_numbers = part_one_cards.parse_line(LINES[4])
+    _, winning_numbers, your_numbers = part_one_cards.parse_line(LINES[4])
     assert 0 == part_one_cards.calculate_points(winning_numbers, your_numbers)
 
-    winning_numbers, your_numbers = part_one_cards.parse_line(LINES[5])
+    _, winning_numbers, your_numbers = part_one_cards.parse_line(LINES[5])
     assert 0 == part_one_cards.calculate_points(winning_numbers, your_numbers)
 
 
@@ -43,7 +46,9 @@ def test_process_input_file() -> None:
 
 
 def test_float_points() -> None:
-    winning_numbers, your_numbers = part_one_cards.parse_line(
-        "Card   5: 76 99 87 97 16 61 73 20 22 19 | 83 27 89 80  1 84 23 21 35 12 60 17 63 26 88  3 70 49  6 34 30 77 59 82 66"
+    card_number, winning_numbers, your_numbers = part_one_cards.parse_line(
+        "Card   5: 76 99 87 97 16 61 73 20 22 19 |"
+        " 83 27 89 80  1 84 23 21 35 12 60 17 63 26 88  3 70 49  6 34 30 77 59 82 66"
     )
+    assert 5 == card_number
     assert 0 == part_one_cards.calculate_points(winning_numbers, your_numbers)
