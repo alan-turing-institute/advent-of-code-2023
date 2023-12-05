@@ -4,14 +4,24 @@ using Test
 test_input = readlines("test_input.txt")
 input = readlines("input.txt")
 
-function parse_input(input::Vector{String}, part_two::Bool = false)::Dict{String,Any}
+function parse_input(
+    input::Vector{String},
+    part_two::Bool = false,
+)::Dict{
+    String,
+    Union{
+        Union{Vector{Int64},Vector{UnitRange{Int64}}},
+        Dict{String,Dict{UnitRange{Int64},Int64}},
+        Vector{Union{String,SubString}},
+    },
+}
     # parse the input to get the seeds (as ranges if part_two), the maps and the order of the maps
     # maps are saved as a dictionary where the keys are the source ranges and 
     # the values are the differences you must add to get the destination
     maps = Dict{String,Dict{UnitRange{Int64},Int64}}()
     # initialize to empty
-    seeds = Vector{Int64}()
-    map_name = ""
+    seeds = nothing
+    map_name = nothing
     maps_in_order = Vector{Union{String,SubString}}()
 
     for line in input
@@ -41,15 +51,19 @@ function parse_input(input::Vector{String}, part_two::Bool = false)::Dict{String
     return Dict("seeds" => seeds, "maps" => maps, "maps_in_order" => maps_in_order)
 end
 
-function ☠️(input::Vector{String}, part_two::Bool = false)::Int64
+function obtain_seeds_from_ranges(seed_ranges::Vector{UnitRange{Int64}})::Vector{Int64}
+    return reduce(vcat, [collect(x) for x in seed_ranges])
+end
+
+# original day_five function
+function ☠️☠️☠️(input::Vector{String}, part_two::Bool = false)::Int64
     # parse the input to get the seeds and maps
     parsed_input = parse_input(input, part_two)
     current_min = Inf64
 
     # if part_two, collect and reduce the seed ranges
     parsed_input["seeds"] =
-        part_two ? reduce(vcat, [collect(x) for x in parsed_input["seeds"]]) :
-        parsed_input["seeds"]
+        part_two ? obtain_seeds_from_ranges(parsed_input["seeds"]) : parsed_input["seeds"]
 
     # for each seed, convert it using the maps and keep track of the minimum
     for seed in ProgressBar(parsed_input["seeds"])
@@ -70,9 +84,16 @@ function ☠️(input::Vector{String}, part_two::Bool = false)::Int64
     return current_min
 end
 
-function is_valid_seed(seed::Int64, seed_ranges::Vector{UnitRange{Int64}})::Bool
+function is_valid_seed(seed::Int64, seeds::Vector{Int64})::Bool
+    # part_one version
     # check if a seed is valid by checking if it's in any of the seed ranges
-    for seed_range in seed_ranges
+    return seed in seeds
+end
+
+function is_valid_seed(seed::Int64, seeds::Vector{UnitRange{Int64}})::Bool
+    # part_two version
+    # check if a seed is valid by checking if it's in any of the seed ranges
+    for seed_range in seeds
         if seed in seed_range
             return true
         end
@@ -80,12 +101,12 @@ function is_valid_seed(seed::Int64, seed_ranges::Vector{UnitRange{Int64}})::Bool
     return false
 end
 
-function part_two(input::Vector{String})::Int64
+function day_five(input::Vector{String}, part_two::Bool = false)::Int64
     # start from a final location and go backwards in the processes
     # keep increasing the final location until we find a valid starting seed
 
     # parse the input to get the seeds and maps
-    parsed_input = parse_input(input, true)
+    parsed_input = parse_input(input, part_two)
     final_location = 0
     while true
         # run the process backwards
@@ -110,13 +131,14 @@ function part_two(input::Vector{String})::Int64
 end
 
 # testing cases
-Test.@test ☠️(test_input, false) == 35
-Test.@test ☠️(test_input, true) == 46
-Test.@test part_two(test_input) == 46
+Test.@test ☠️☠️☠️(test_input, false) == 35
+Test.@test ☠️☠️☠️(test_input, true) == 46
+Test.@test day_five(test_input, false) == 35
+Test.@test day_five(test_input, true) == 46
 
 # Part One
-println("Part One: ", ☠️(input, false))
+println("Part One: ", day_five(input, false))
 
 # Part Two
-# ☠️(input, true) would probably take 46 hours ☠️☠️☠️
-println("Part Two: ", part_two(input))
+# ☠️☠️☠️(input, true) would probably take 46 hours ☠️☠️☠️
+println("Part Two: ", day_five(input, true))
