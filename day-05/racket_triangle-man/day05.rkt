@@ -7,9 +7,17 @@
     (parse-input
      (with-input-from-file "input.txt" port->lines)))
 
+  ;; Part 1
   (apply min
          (map (λ (sd) (almanac-propagate *almanac* sd)) *seeds*))
 
+ ;; Part 2
+  (time 
+   (apply min
+          (map rng-min
+               (almanac-propagate-ranges (seeds->ranges *seeds*) *almanac*))))
+  
+  
   )
 
 
@@ -22,6 +30,9 @@
 ;; [min, min + len)
 (struct rng (min len) #:transparent)
 
+;; ------------------------------------------------------------
+;; For part 2
+
 ;; Convert mistaken part 1 view of seeds into the part 2
 ;; interpretation
 (define (seeds->ranges seeds)
@@ -33,14 +44,14 @@
          (loop (cons (rng (car seeds) (cadr seeds)) ranges)
                (cddr seeds))))))
 
-;; Make a range, max is exclusive
+;; Make a range (max is exclusive)
 (define (make-rng min max)
   (rng min (- max min)))
 
 ;; Return three ranges, any of which might be #f:
 ;; 1. The bit of [min1, max1) that is below min2;
-;; 2. The overlap of [min1, max1) and [min2, max2)
-;; 3. The bit of [min1, max1) that is above max2
+;; 2. The bit of [min1, max1) that is above max2
+;; 3. The overlap of [min1, max1) and [min2, max2)
 (define (overlap rng1 rng2)
   (match-let ([(rng min1 len1) rng1]
               [(rng min2 len2) rng2])
@@ -50,43 +61,48 @@
        (if (< min1 min2)
            (make-rng min1 (min max1 min2))
            #f)
+       (if (> max1 max2)
+           (make-rng (max min1 max2) max1)
+           #f)
        (if (and (< min1 max2)
                 (> max1 min2))
            (make-rng (max min1 min2) (min max1 max2))
-           #f)
-       (if (> max1 max2)
-           (make-rng (max min1 max2) max1)
            #f)))))
 
 ;; submap? rng? -> [list-of rng?] (must have same total length!)
+;; Propagate a seed range through a submap.
+;; Returns a pair:
+;; - a list of zero, one, or two ranges that have not been caught by the submap
+;; - up to one range that was caught and mapped by the submap, or #f
 (define (submap-propagate-range in sm)
   (match-let ([(submap src-min dst-min submap-len) sm])
     (let ([splits (overlap in (rng src-min submap-len))])
-      (let ([outs
-             (filter values ; Keep only non-#f entries
-                     (list
-                      (first splits)
-                      (let ([jump-rng (second splits)])
-                        (and jump-rng
-                             (rng (+ (rng-min jump-rng) (- dst-min src-min)) 
-                                  (rng-len jump-rng))))
-                      (third splits)))])
-        ;; error when we get (rng 68 4) on (submap 69 0 1),
-        ;; from (rng 61 7) on (submap 64 68 13)
-        ;; from (rng 55 13) on (submap 53 49 8)
-        ;; 
-        (when (ormap (λ (r) (equal? r (rng 55 13))) outs)
-            (displayln (format "Error! ~a and ~a gave ~a." in sm outs)))
-        outs
-            ))))
-  
+      (cons (filter values (take splits 2))
+            (let ([jump-rng (third splits)])
+              (and jump-rng
+                   (rng (+ (rng-min jump-rng) (- dst-min src-min)) 
+                        (rng-len jump-rng))))))))
+
+
+;; Propagate a range of seedmaps through the series of submaps in a
+;; map.  The ranges are sent through the first submap, which may
+;; result in some mapped ranges (which are then captured) and some
+;; leftover ranges. The leftover ranges are then sent through the
+;; subsequent submaps.  a list of ranges
+
 ;; [list-of rng?] -> [list-of submap?] -> [list-of rng?]
-;; Like map-propagate but takes ranges of seeds and produces
-;; a list of ranges
 (define (map-propagate-ranges ins submaps)
-  (append*
-   (for/list ([in (in-list ins)])
-     (append* (map (curry submap-propagate-range in) submaps)))))
+  ;; Iterate through submaps
+  (call-with-values
+   (thunk
+    (for/fold ([mapped-ranges     '()]
+               [to-process-ranges ins])
+              ([sm (in-list submaps)])
+      (let ([outs (map (λ (in) (submap-propagate-range in sm)) to-process-ranges)])
+        (values
+         (append (filter-map cdr outs) mapped-ranges)
+         (append-map car outs)))))
+   append))
 
 (define (almanac-propagate-ranges ins almanac)
   (for/fold ([outs ins])
