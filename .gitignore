@@ -2,6 +2,7 @@
 input.txt
 test_input.txt
 test_input_2.txt
+example.txt
 
 target/
 __pycache__/
