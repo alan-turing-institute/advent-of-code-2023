@@ -59,18 +59,20 @@ part1 = sum . map score
 
 part2 :: [Card] -> Int
 part2 cards =
-  -- IntMap Int = cardId -> number of extra copies of that card
-  -- Int = accumulator of total numbers of card
-  let addCopy copies m cardId = IM.insertWith (+) cardId copies m
-      addCopies copies initialCardId nWins m =
-        foldl' (addCopy copies) m [initialCardId + 1 .. initialCardId + nWins]
-      f :: (IntMap Int, Int) -> Card -> (IntMap Int, Int)
-      f (m, total) card =
-        let copies = 1 + IM.findWithDefault 0 (cardId card) m
-         in ( addCopies copies (cardId card) (winners card) m,
-              copies + total
-            )
-   in snd $ foldl' f (IM.empty, 0) cards
+  -- Map of cardId -> number of copies of that card. Set up with 1 card per ID.
+  let initialMap = IM.fromList $ map (\c -> (cardId c, 1)) cards
+      -- Add n copies of cardId to the map.
+      addCopy n m cardId = IM.insertWith (+) cardId n m
+      -- Add n copies of the nWins successive cards after initialCardId to the map.
+      addCopies n initialCardId nWins m =
+        foldl' (addCopy n) m [initialCardId + 1 .. initialCardId + nWins]
+      -- Construct the map
+      f :: IntMap Int -> Card -> IntMap Int
+      f m card =
+        let copies = m IM.! cardId card
+         in addCopies copies (cardId card) (winners card) m
+      fullMap = foldl' f initialMap cards
+   in IM.foldl' (+) 0 fullMap
 
 main :: IO ()
 main = do
