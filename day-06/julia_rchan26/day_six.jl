@@ -26,7 +26,7 @@ function day_six(input::Vector{String}, part_two::Bool=false)::Int64
     sheet = parse_input(input, part_two)
     total = 1
     for i in 1:length(sheet["Time"])
-        distance_travelled_per_hold = [🏎️🏎️🏎️(x, sheet["Time"][i]) for x in 1:sheet["Time"][i]]
+        distance_travelled_per_hold = 🏎️🏎️🏎️.(1:sheet["Time"][i], sheet["Time"][i])
         total *= sum(distance_travelled_per_hold .> sheet["Distance"][i])
     end
     return total
