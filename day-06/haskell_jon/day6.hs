@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+import Control.Monad (when)
 import Data.Char (isSpace)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -20,17 +21,17 @@ getWaysToBeat r =
    in length $ filter (> recordDist r) possibleDistances
 
 -- Solve the quadratic equation x^2 - tx + d = 0, where t = time r and d =
--- recordDist r. Then filter to find the values of x that are integers and lie
--- within the range [0, time r].
+-- recordDist r. Assume the two roots are x1 and x2. Then find the smallest
+-- integer larger than x1 (i.e. floor x1 + 1) and the largest integer smaller
+-- than x2 (i.e. ceiling x2 - 1), and count the number of integers between them.
 getWaysToBeat' :: Race -> Int
 getWaysToBeat' r =
   let t = fromIntegral $ time r
       d = fromIntegral $ recordDist r
-      x1 = ceiling $ (t - sqrt (t * t - 4 * d)) / 2
-      x2 = floor $ (t + sqrt (t * t - 4 * d)) / 2
-      x1max = max x1 0
-      x2min = min x2 (time r)
-   in x2min - x1max + 1
+      discrim = sqrt (t * t - 4 * d)
+      x1 = floor $ ((t - discrim) / 2) + 1
+      x2 = ceiling $ ((t + discrim) / 2) - 1
+   in x2 - x1 + 1
 
 -- * Parsing
 
@@ -45,6 +46,9 @@ pInput = do
   times <- some $ lx L.decimal
   _ <- lx $ string "Distance:"
   recordDists <- some $ lx L.decimal
+  -- Ugly. Ugly ugly.
+  when (length times /= length recordDists) $
+    error "Number of times and record distances must be equal"
   pure $ zipWith Race times recordDists
 
 parseInput :: Text -> [Race]
@@ -57,9 +61,10 @@ parseInput t =
 
 main :: IO ()
 main = do
-  races1 <- parseInput <$> T.readFile "input.txt"
+  input <- T.readFile "input.txt"
+  let races1 = parseInput input
   print $ product $ map getWaysToBeat races1
   print $ product $ map getWaysToBeat' races1
-  races2 <- parseInput . T.filter (not . isSpace) <$> T.readFile "input.txt"
+  let races2 = parseInput . T.filter (not . isSpace) $ input
   print $ product $ map getWaysToBeat races2
   print $ product $ map getWaysToBeat' races2
