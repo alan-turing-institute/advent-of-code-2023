@@ -1,5 +1,6 @@
 .venv
 input.txt
+test.txt
 test_input.txt
 test_input_2.txt
 example.txt
@@ -13,3 +14,9 @@ __pycache__/
 *.ipynb_checkpoints
 *rchan.ipynb
 *~
+
+# mac nonsense
+.DS_Store
+
+# R
+.Rhistory
