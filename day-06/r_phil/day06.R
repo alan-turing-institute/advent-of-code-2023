@@ -13,5 +13,5 @@ sapply(1:nrow(dat), function(x) sum(possible_times[[x]] > dat$best[x])) |> prod(
 
 # Part 2
 dat2 <- as.data.frame(lapply(input_strs, function(x) as.numeric(paste0(x, collapse=""))))
-names(dat2) <- c("time", "best")
+names(dat2) <- names(dat)
 sum(time_fn(dat2$time) > dat2$best)
