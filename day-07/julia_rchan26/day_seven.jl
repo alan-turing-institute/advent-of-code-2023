@@ -13,30 +13,6 @@ function parse_input(input::Vector{String})::OrderedDict{String, Int64}
     return hands
 end
 
-function 🖐️💪(🖐️::String)
-    # get hand strength
-    char_count = counter(🖐️)
-    if length(char_count) == 1
-        return 6
-    elseif length(char_count) == 2
-        if maximum(values(char_count)) == 4
-            return 5
-        else
-            return 4
-        end
-    elseif length(char_count) == 3
-        if maximum(values(char_count)) == 3
-            return 3
-        else
-            return 2
-        end
-    elseif length(char_count) == 4
-        return 1
-    else
-        return 0
-    end
-end
-
 function 🃏💪(🃏::Char, 🥈::Bool)::Int64
     # get card strength
     if 🃏 == 'A'
@@ -94,6 +70,7 @@ function 🆙🖐️(🖐️::String)::String
 end
 
 function 🖐️💪(🖐️::String, 🥈::Bool = false)::Int64
+    # get hand strength
     if 🥈
         # improve the hand if possible
         🖐️ = 🆙🖐️(🖐️)
