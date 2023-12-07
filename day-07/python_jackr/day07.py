@@ -37,11 +37,19 @@ class Hand:
             [self.cards.count(t) for t in card_types if t != self.wildcard],
             reverse=True,
         )
+        if len(card_counts) == 0:
+            # all wildcards
+            card_counts = [0]
         wildcard_count = self.cards.count(self.wildcard) if self.wildcard else 0
-        if len(card_counts) > 0:
-            max_count = card_counts[0] + wildcard_count
-        else:  # all cards are wildcards
-            max_count = wildcard_count
+
+        # distribute wildcards to best possible cards (cards with highest count)
+        idx = 0
+        while wildcard_count > 0:
+            add_cards = min(5 - card_counts[idx], wildcard_count)
+            wildcard_count -= add_cards
+            card_counts[idx] += add_cards
+
+        max_count = card_counts[0]
 
         if max_count == 5:
             return "5Kind"
@@ -49,18 +57,6 @@ class Hand:
             return "4Kind"
         if max_count == 1:
             return "HighCard"
-
-        # use any wildcards to try top of the most common card type up to 3
-        need = 3 - card_counts[0]
-        add_wilds = min([need, wildcard_count])
-        card_counts[0] += add_wilds
-        wildcard_count -= add_wilds
-        # use any remaining wildcards to try to top up the 2nd most common type up to 2
-        need = 2 - card_counts[1]
-        add_wilds = min([need, wildcard_count])
-        card_counts[1] += add_wilds
-        wildcard_count -= add_wilds
-
         if 3 in card_counts and 2 in card_counts:
             return "FullHouse"
         if max_count == 3:
