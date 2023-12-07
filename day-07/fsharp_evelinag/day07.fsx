@@ -51,37 +51,29 @@ let cardValue x = cardValueLookup.[x]
 // Compare if hand1 < hand2 where hand1 and hand2 are of the same type
 // i.e. compare individual cards in the hand
 // Returns:
-//      -1 if hand1 < hand2, 
+//      < 0 if hand1 < hand2, 
 //      0 if hand1 = hand2 
-//      1 if hand1 > hand2
+//      > 0 if hand1 > hand2
 let compareCards (hand1: char[]) (hand2: char[]) (cardValue : char -> int) : int = 
-    let result = 
-        (hand1, hand2)
-        ||> Array.zip
-        |> Array.fold (fun state (c1, c2) -> 
-            match state with
-            | Some x -> state
-            | None ->
-                if cardValue c1 < cardValue c2 then Some -1
-                else if cardValue c1 > cardValue c2 then Some 1
-                else None
-            ) None
-    match result with
-    | None -> 0     // they're the same
-    | Some x -> x 
+    (hand1, hand2)
+    ||> Array.zip
+    |> Array.fold (fun state (c1, c2) -> 
+        if state <> 0 then state
+        else cardValue c1 - cardValue c2
+        ) 0
 
 // Compare hands, first based on their type and then card-by-card
 // Returns:
-//      -1 if hand1 < hand2, 
+//      < 0 if hand1 < hand2, 
 //      0 if hand1 = hand2 
-//      1 if hand1 > hand2
+//      > 0 if hand1 > hand2
 let comparer ((hand1, bid1): char[] * int) ((hand2, bid2): char[] * int) =
     let value1 = handValue hand1 
     let value2 = handValue hand2
-    if value1 < value2 then -1
-    else if value1 > value2 then 1
-    else // value1 = value2
+    if value1 = value2 then
        compareCards hand1 hand2 cardValue
+    else 
+        value1 - value2
 
 let part1 = 
     cardsAndBids
@@ -121,11 +113,11 @@ let makeHandBetter (hand: char[]) =
 let comparer2 ((hand1, bid1): char[] * int) ((hand2, bid2): char[] * int) =
     let value1 = makeHandBetter hand1 |> handValue  
     let value2 = makeHandBetter hand2 |> handValue
-    if value1 < value2 then -1
-    else if value1 > value2 then 1
-    else // value1 = value2
+    if value1 = value2 then 
+        // same hand type, compare cards
         compareCards hand1 hand2 cardValue2
-
+    else
+        value1 - value2
 
 let part2 =
     cardsAndBids
