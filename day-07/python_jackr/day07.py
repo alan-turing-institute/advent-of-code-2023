@@ -1,20 +1,4 @@
-def parse_data(file, card_rankings, wildcard=None):
-    hands = []
-    for line in file.read().splitlines():
-        cards, bid = line.split(" ")
-        hands.append(Hand(cards, int(bid), card_rankings, wildcard))
-    return hands
-
-
-HAND_RANKINGS = [
-    "5Kind",
-    "4Kind",
-    "FullHouse",
-    "3Kind",
-    "2Pair",
-    "Pair",
-    "HighCard",
-]
+HAND_RANKINGS = ["5Kind", "4Kind", "FullHouse", "3Kind", "2Pair", "Pair", "HighCard"]
 
 
 class Hand:
@@ -31,7 +15,7 @@ class Hand:
         self.wildcard = wildcard
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         card_types = set(self.cards)
         card_counts = sorted(
             [self.cards.count(t) for t in card_types if t != self.wildcard],
@@ -67,7 +51,7 @@ class Hand:
             return "Pair"
         raise ValueError("unexpected hand type")
 
-    def __gt__(self, other):
+    def __gt__(self, other: "Hand") -> bool:
         if HAND_RANKINGS.index(self.kind) < HAND_RANKINGS.index(other.kind):
             return True
         if HAND_RANKINGS.index(self.kind) > HAND_RANKINGS.index(other.kind):
@@ -79,27 +63,34 @@ class Hand:
                 return False
         return False  # equal
 
-    def __eq__(self, other):
+    def __eq__(self, other: "Hand") -> bool:
         return self.cards == other.cards
 
-    def __repr__(self):
-        return f"Hand(cards={''.join(self.cards)}, bid={self.bid=}, kind={self.kind})"
+
+def score(hands: list[Hand]) -> int:
+    return sum((rank + 1) * hand.bid for rank, hand in enumerate(sorted(hands)))
 
 
-def part_1(path):
+def parse_data(file: str, card_rankings: list[str], wildcard: str | None = None):
+    hands = []
+    for line in file.splitlines():
+        cards, bid = line.split(" ")
+        hands.append(Hand(cards, int(bid), card_rankings, wildcard))
+    return hands
+
+
+def part_1(path: str) -> None:
     card_rankings = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"]
     with open(path) as f:
-        hands = parse_data(f, card_rankings)
-    result = sum((rank + 1) * hand.bid for rank, hand in enumerate(sorted(hands)))
-    print("Part 1:", result)
+        hands = parse_data(f.read(), card_rankings, wildcard=None)
+    print("Part 1:", score(hands))
 
 
-def part_2(path):
+def part_2(path: str) -> None:
     card_rankings = ["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "J"]
     with open(path) as f:
-        hands = parse_data(f, card_rankings, wildcard="J")
-    result = sum((rank + 1) * hand.bid for rank, hand in enumerate(sorted(hands)))
-    print("Part 2:", result)
+        hands = parse_data(f.read(), card_rankings, wildcard="J")
+    print("Part 2:", score(hands))
 
 
 if __name__ == "__main__":
