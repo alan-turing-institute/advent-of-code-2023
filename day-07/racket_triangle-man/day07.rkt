@@ -6,20 +6,28 @@
     (for/list ([line (in-list (with-input-from-file "input.txt" port->lines))])
       (read-play line)))
 
+  ;; Part 1
   (for/sum ([ply  (in-list (sort *plays* strength<=?))]
             [rank (in-naturals 1)])
-;    (printf "~a -- ~a\n" rank (show-play ply))
+    ;    (printf "~a -- ~a\n" rank (show-play ply))
     (* rank (play-bid ply)))
 
+ ;; Part 2
+  (let ([new-plays (map replace-jack-with-joker *plays*)])
+    (for/sum ([ply  (in-list (sort new-plays strength<=?))]
+              [rank (in-naturals 1)])
+      (* rank (play-bid ply))))
+  
   )
-
 
 ;; ------------------------------------------------------------
 
-;; A card is an integer between 0 and 12
-(define card? (integer-in 0 12))
+;; A card is an integer between 0 and 13
+(define card? (integer-in 0 13))
 
-(define card-ranks (string->list "23456789TJQKA"))
+(define card-ranks (string->list "*23456789TJQKA"))
+
+(define card-joker 0)
 
 (define/contract (char->card c)
   (-> char? card?)
@@ -97,7 +105,6 @@
        (hand->hand-type cs)
        (string->number bd)))))
 
-
 (define (card-list<=? cs₁ cs₂)
   (or (null? cs₁)
       (card<? (car cs₁) (car cs₂))
@@ -108,6 +115,32 @@
   (or (hand-type<? (play-type p₁) (play-type p₂))
       (and (hand-type=? (play-type p₁) (play-type p₂))
            (card-list<=? (play-cards p₁) (play-cards p₂)))))
+
+;; ------------------------------------------------------------
+
+;; For part 2
+
+(define ((swap c₁ c₂) c)
+  (if (card=? c c₁) c₂ c))
+
+(define make-jack-joker
+  (swap (char->card #\J) card-joker))
+
+(define (joker-best-type cards)
+  ;; At this point, there is no J in cards
+  ;; Replace * with each card in cards
+  (apply max
+         (for/list ([new-c (in-list cards)])
+           (hand->hand-type (map (swap card-joker new-c) cards)))))
+
+;; For a given play, do two things:
+;; 1. Replace the Jack with the Joker
+;; 2. Replace the type with the best possible type over all
+;;    replacements of the now-Joker with "normal" cards.
+(define (replace-jack-with-joker ply)
+  (match-let ([(play cards _ bid) ply])
+    (let ([hand (map make-jack-joker cards)]) ; list of cards with J replaced by *
+      (play hand (joker-best-type hand) bid))))
 
 
 ;; ------------------------------------------------------------
@@ -130,5 +163,11 @@ EOF
   (for/sum ([ply  (in-list (sort *plays* strength<=?))]
             [rank (in-naturals 1)])
     (* rank (play-bid ply)))
-  
+
+  ;; Part 2
+  (let ([new-plays (map replace-jack-with-joker *plays*)])
+    (for/sum ([ply  (in-list (sort new-plays strength<=?))]
+              [rank (in-naturals 1)])
+      (* rank (play-bid ply))))
+
   )
