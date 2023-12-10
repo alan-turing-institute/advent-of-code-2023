@@ -60,8 +60,7 @@ def get_next(node, previous, grid):
 def find_loop(start, grid):
     # kinda breadth-first search
     visited = [[False for _ in range(len(grid[0]))] for _ in range(len(grid))]
-    parents = defaultdict(list)
-    path = []
+    loop = []
     queue = [(start, [])]
     is_start = True
     while len(queue) > 0:
@@ -69,53 +68,59 @@ def find_loop(start, grid):
         # hacky additional is_start check to avoid instantly returning as the start
         # node = goal node
         if (not is_start) and now == start:
-            return parents  # this is the loop
+            return loop  # this is the loop
         else:
-            path.append(now)
+            loop.append(now)
             is_start = False
         # find where we're going next
         next = get_next(now, previous, grid)
         if next:
             visited[next[0]][next[1]] = True
-            parents[next].append(now)
             queue.append((next, now))
-    print(len(path) / 2)
-    return defaultdict(set)  # not a loop
+    return []  # not a loop
 
 
 def part_1(grid):
     start = get_start(grid)
     for start_type in PIPES_OUT.keys():
         grid[start[0]][start[1]] = start_type
-        parents = find_loop(start, grid)
-        if len(parents) > 0:
+        loop = find_loop(start, grid)
+        if len(loop) > 0:
             break  # found the loop
-    print("Part 1:", len(parents) / 2)
-    return start, parents
+    print("Part 1:", len(loop) / 2)
+    return loop
 
 
-def part_2(start, parents, grid):
-    loop_nodes = parents.keys()
-    is_loop = [[False for _ in range(len(grid[0]))] for _ in range(len(grid))]
-    for node in loop_nodes:
-        is_loop[node[0]][node[1]] = True
+def part_2(loop, grid):
+    on_loop = [[False for _ in range(len(grid[0]))] for _ in range(len(grid))]
+    for node in loop:
+        on_loop[node[0]][node[1]] = True
 
     n_inside = 0
-    for row in range(len(is_loop)):
+    for row in range(len(on_loop)):
         inside = False
-        for col in range(len(is_loop[0])):
-            if is_loop[row][col] and grid[row][col] in ["|", "L", "J"]:
-                inside = not inside
-            if not is_loop[row][col]:
+        for col in range(len(on_loop[0])):
+            if on_loop[row][col]:
+                if grid[row][col] in ["|", "L", "J"]:
+                    # each time we cross a vertical line (when scanning horizontally) in
+                    # the loop we move from outside of it to inside (or vice-versa).
+                    # Need to include either ("L" and "J") or ("F" and "7") as vertical
+                    # lines too, but not both, depending on how we're treating the
+                    # corners (which row the horizontal edge of the corner belongs to)
+                    # |  *  |     |--x--|
+                    # |     |     |     |
+                    # |__x__|  or |  *  |
+                    # I don't think I've understood this well enough to explain it but
+                    # it worked and it's late...
+                    inside = not inside
+            else:
                 n_inside += inside
 
     print("Part 2:", n_inside)
 
 
 if __name__ == "__main__":
-    with open(
-        "/Users/jroberts/repos/advent-of-code-2023/day-10/python_jackr/input.txt"
-    ) as f:
+    with open("input.txt") as f:
         grid = parse_data(f)
-    start, parents = part_1(grid)
-    part_2(start, parents, grid)
+    loop = part_1(grid)
+    part_2(loop, grid)
