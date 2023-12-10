@@ -59,7 +59,6 @@ def get_next(node, previous, grid):
 
 def find_loop(start, grid):
     # kinda breadth-first search
-    visited = [[False for _ in range(len(grid[0]))] for _ in range(len(grid))]
     loop = []
     queue = [(start, [])]
     is_start = True
@@ -75,7 +74,6 @@ def find_loop(start, grid):
         # find where we're going next
         next = get_next(now, previous, grid)
         if next:
-            visited[next[0]][next[1]] = True
             queue.append((next, now))
     return []  # not a loop
 
