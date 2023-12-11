@@ -60,26 +60,21 @@ let calculateColDistance expansionFactor c1 c2 =
     |> List.sum
     |> fun x -> x - 1L
 
-
-let distances1 = 
+let pairwiseDistances expansionFactor = 
     [| for i in 0..galaxyCoordinates.Length-1 do 
         for j in 0..i-1 ->
             (galaxyCoordinates.[i], galaxyCoordinates.[j]) |]
     |> Array.map (fun ((rowIdx1, colIdx1), (rowIdx2, colIdx2)) -> 
-        calculateRowDistance 2L rowIdx1 rowIdx2
-        + calculateColDistance 2L colIdx1 colIdx2
+        calculateRowDistance expansionFactor rowIdx1 rowIdx2
+        + calculateColDistance expansionFactor colIdx1 colIdx2
         )
     |> Array.sum
 
-let distances2 = 
-    [| for i in 0..galaxyCoordinates.Length-1 do 
-        for j in 0..i-1 ->
-            (galaxyCoordinates.[i], galaxyCoordinates.[j]) |]
-    |> Array.map (fun ((rowIdx1, colIdx1), (rowIdx2, colIdx2)) -> 
-        calculateRowDistance 1000000L rowIdx1 rowIdx2
-        + calculateColDistance 1000000L colIdx1 colIdx2
-        )
-    |> Array.sum
+
+
+let distances1 = pairwiseDistances 2L
+
+let distances2 = pairwiseDistances 1000000L
 
 
 printfn $"{distances1}"
