@@ -15,6 +15,7 @@ XXX = (XXX, XXX)
 EOF
   )
 
+;; "AAA = (BBB, CCC)" => (values "AAA" '("BBB" . "CCC"))
 (define (parse-map-line str)
   (values
    (substring str 0 3)
