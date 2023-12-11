@@ -9,7 +9,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Void (Void)
-import Debug.Trace
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -152,10 +151,9 @@ part1 grid starting =
       loopSizeExcludingStart = length $ takeWhile (\(_, crd) -> crd /= starting) $ tail trajectory
    in (loopSizeExcludingStart + 1) `div` 2
 
--- Version of the grid which only retains info about whether a tile is part of
--- the main loop or not
-
-data SimplifiedTile = MainLoop Tile | AnythingElse deriving (Show, Eq)
+-- | Version of the grid which throws away all the tiles that are not part of
+-- the main loop
+data SimplifiedTile = MainLoop !Tile | AnythingElse deriving (Show, Eq)
 
 type SimplifiedGrid = Map (Int, Int) SimplifiedTile
 
@@ -168,7 +166,10 @@ simplifyGrid grid starting =
    in M.mapWithKey (\crd tile -> if crd `elem` loopCoordinates then MainLoop tile else AnythingElse) grid
 
 -- | Whether we're 'inside' or 'outside' the main loop
-data LoopState = Inside Tile | InsideNested Tile LoopState | Outside deriving (Show, Eq)
+-- Inside tells us which tile initially got us inside the loop.
+-- InsideNested keeps track of both the tile that got us inside the loop, plus
+-- the previous state so that we can 'restore' it when exiting an inner loop
+data LoopState = Inside !Tile | InsideNested !Tile !LoopState | Outside deriving (Show, Eq)
 
 part2 :: SimplifiedGrid -> Int
 part2 grid =
@@ -179,34 +180,46 @@ part2 grid =
           foldl'
             ( \(acc, state) tile ->
                 case (tile, state) of
-                  -- LR/UD, same as above, this part just keeps track of the
-                  -- state
+                  -- Goodness knows how I got all this correct.
                   (MainLoop TileLR, Outside) -> (acc, Inside TileLR)
                   (MainLoop TileLR, Inside _) -> (acc, Outside)
+                  -- passing through a UD tile can't change the state
                   (MainLoop TileUD, st) -> (acc, st)
-                  -- Beginning of a DR/DL
+                  -- These are painful. Since we're traversing the grid by
+                  -- columns, downwards, DR and DL are the two other tiles that
+                  -- can bring us from outside to inside.
                   (MainLoop TileDR, Outside) -> (acc, Inside TileDR)
                   (MainLoop TileDL, Outside) -> (acc, Inside TileDL)
+                  -- However, we also need to keep track of the previous state.
+                  -- If we are already inside a loop, for example, then when
+                  -- this stretch of the main loop ends we need to pop back into
+                  -- the previous state...
                   (MainLoop TileDR, insideSt) -> (acc, InsideNested TileDR insideSt)
                   (MainLoop TileDL, insideSt) -> (acc, InsideNested TileDL insideSt)
-                  -- Ending of a DR/DL
+                  -- ... like this.
                   (MainLoop TileUR, InsideNested TileDR st) -> (acc, st)
                   (MainLoop TileUR, InsideNested TileDL st) -> (acc, Outside)
+                  -- If we started with a DR from an outside state, then a UR
+                  -- would bring us back to outside.
                   (MainLoop TileUR, Inside TileDR) -> (acc, Outside)
+                  -- If we started from a DL from an outside state, then a UR
+                  -- would actually leave us *inside*.
                   (MainLoop TileUR, st) -> (acc, st)
+                  -- The UL bits are the same as the UR bits, but mirrored.
                   (MainLoop TileUL, InsideNested TileDL st) -> (acc, st)
                   (MainLoop TileUL, InsideNested TileDR st) -> (acc, Outside)
                   (MainLoop TileUL, Inside TileDL) -> (acc, Outside)
                   (MainLoop TileUL, st) -> (acc, st)
+                  -- Anything else can just be carried forward (I think).
                   (MainLoop t, Inside _) -> (acc, Inside t)
-                  -- The real bits we want to count
+                  -- The real bits we want to count.
+                  (AnythingElse, InsideNested _ _) -> (acc + 1, state)
                   (AnythingElse, Inside _) -> (acc + 1, state)
                   (AnythingElse, Outside) -> (acc, state)
             )
             (0, Outside)
             tiles
-      innerCells = traceShowId $ map countInnerCells gridRows
-   in sum innerCells
+   in sum $ map countInnerCells gridRows
 
 main :: IO ()
 main = do
