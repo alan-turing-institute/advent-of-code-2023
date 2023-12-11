@@ -1,6 +1,3 @@
-from collections import defaultdict
-
-
 def parse_data(file):
     lines = file.read().splitlines()
     grid = []
@@ -59,22 +56,20 @@ def get_next(node, previous, grid):
 
 def find_loop(start, grid):
     # kinda breadth-first search
-    loop = []
-    queue = [(start, [])]
-    is_start = True
-    while len(queue) > 0:
-        now, previous = queue.pop(0)
-        # hacky additional is_start check to avoid instantly returning as the start
-        # node = goal node
-        if (not is_start) and now == start:
+    loop = [start]
+    # current: Grid cell we're currently at
+    # previous: Where we were before going to current
+    current = get_next(start, None, grid)
+    previous = start
+    while current:
+        if current == start:
             return loop  # this is the loop
-        else:
-            loop.append(now)
-            is_start = False
-        # find where we're going next
-        next = get_next(now, previous, grid)
-        if next:
-            queue.append((next, now))
+        # continue the potential loop path
+        loop.append(current)
+        next = get_next(current, previous, grid)
+        previous = current
+        current = next
+
     return []  # not a loop
 
 
