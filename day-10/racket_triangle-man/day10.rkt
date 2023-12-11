@@ -4,30 +4,30 @@
 
 (module+ main
 
-    (define *input*
-    (with-input-from-string
-      #<<EOF
-...........
-.S-------7.
-.|F-----7|.
-.||.....||.
-.||.....||.
-.|L-7.F-J|.
-.|..|.|..|.
-.L--J.L--J.
-...........
-EOF
+;;     (define *input*
+;;     (with-input-from-string
+;;       #<<EOF
+;; ...........
+;; .S-------7.
+;; .|F-----7|.
+;; .||.....||.
+;; .||.....||.
+;; .|L-7.F-J|.
+;; .|..|.|..|.
+;; .L--J.L--J.
+;; ...........
+;; EOF
+;;       (thunk
+;;        (lists->grid
+;;         (map (λ (line) (map char->tile (string->list line)))
+;;              (port->lines))))))
+  
+  (define *input*
+    (with-input-from-file "input.txt"
       (thunk
        (lists->grid
         (map (λ (line) (map char->tile (string->list line)))
              (port->lines))))))
-  
-  ;; (define *input*
-  ;;   (with-input-from-file "input.txt"
-  ;;     (thunk
-  ;;      (lists->grid
-  ;;       (map (λ (line) (map char->tile (string->list line)))
-  ;;            (port->lines))))))
 
   (define *start* (grid-member *input* 'start))
   
@@ -36,7 +36,7 @@ EOF
   (define *first-tile*
     (adjacent-non-ground *input* *start*))
 
-  ;; Part 1
+  ;; Part 1 -----------------------------------------------------
 
   (define *loop*
     (let loop ([this  *start*]
@@ -51,7 +51,7 @@ EOF
 
   (/ (length *loop*) 2)
 
-  ;; Part 2
+  ;; Part 2 -----------------------------------------------------
 
   ;; Figure out what the start symbol should be replaced by
   (define *last-tile* (car *loop*))
@@ -70,7 +70,8 @@ EOF
       temp))
 
   ;; Flood fill
-  (for/list ([row (in-list (grid->lists *new-grid*))])
+  
+  (for/sum ([row (in-list (grid->lists *new-grid*))])
     (for/fold ([inside? #f]
                [count   0]
                #:result count)
@@ -80,13 +81,11 @@ EOF
          (if inside?
              (values inside? (+ count 1))
              (values inside? count))]
-        [(or (memq 'north tile) (memq 'south tile))
+        [(eq? (car tile) 'north)
          (values (not inside?) count)]
         [else
          (values inside? count)])))
   
-  
-
   )
 
 (define (char->tile tile)
