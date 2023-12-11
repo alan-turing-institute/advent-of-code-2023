@@ -25,7 +25,7 @@ opp DDown = DUp
 opp DLeft = DRight
 opp DRight = DLeft
 
-data Tile = Ground | Starting | Tile !Direction !Direction
+data Tile = Ground | Starting | TileUD | TileLR | TileUR | TileUL | TileDR | TileDL
   deriving (Show, Eq)
 
 type Grid = Map (Int, Int) Tile
@@ -43,7 +43,19 @@ nextDirection ::
   Direction ->
   -- | The next direction we should move in
   Direction
-nextDirection (Tile d1 d2) from = if d1 == opp from then d2 else d1
+nextDirection TileUD DUp = DUp
+nextDirection TileUD DDown = DDown
+nextDirection TileLR DLeft = DLeft
+nextDirection TileLR DRight = DRight
+nextDirection TileUR DDown = DRight
+nextDirection TileUR DLeft = DUp
+nextDirection TileUL DDown = DLeft
+nextDirection TileUL DRight = DUp
+nextDirection TileDR DUp = DRight
+nextDirection TileDR DLeft = DDown
+nextDirection TileDL DUp = DLeft
+nextDirection TileDL DRight = DDown
+nextDirection _anyOtherTile _anyOtherDirection = error "Invalid tile/direction combination"
 
 move :: Grid -> (Direction, (Int, Int)) -> (Direction, (Int, Int))
 move grid (currentDirection, (curX, curY)) =
@@ -64,12 +76,12 @@ pLine = do
   t <-
     some $
       choice
-        [ Tile DUp DDown <$ char '|',
-          Tile DLeft DRight <$ char '-',
-          Tile DUp DRight <$ char 'L',
-          Tile DUp DLeft <$ char 'J',
-          Tile DDown DRight <$ char 'F',
-          Tile DDown DLeft <$ char '7',
+        [ TileUD <$ char '|',
+          TileLR <$ char '-',
+          TileUR <$ char 'L',
+          TileUL <$ char 'J',
+          TileDR <$ char 'F',
+          TileDL <$ char '7',
           Ground <$ char '.',
           Starting <$ char 'S'
         ]
@@ -87,16 +99,16 @@ getValidDirections grid (x, y) =
   canGoUp ++ canGoDown ++ canGoLeft ++ canGoRight
   where
     canGoUp = case M.lookup (x, y - 1) grid of
-      Just (Tile d1 d2) -> [DUp | d1 == DDown || d2 == DDown]
+      Just tile -> [DUp | tile `elem` [TileUD, TileDL, TileDR]]
       _anyOtherTile -> []
     canGoDown = case M.lookup (x, y + 1) grid of
-      Just (Tile d1 d2) -> [DDown | d1 == DUp || d2 == DUp]
+      Just tile -> [DDown | tile `elem` [TileUD, TileUL, TileUR]]
       _anyOtherTile -> []
     canGoLeft = case M.lookup (x - 1, y) grid of
-      Just (Tile d1 d2) -> [DLeft | d1 == DRight || d2 == DRight]
+      Just tile -> [DLeft | tile `elem` [TileLR, TileUR, TileDR]]
       _anyOtherTile -> []
     canGoRight = case M.lookup (x + 1, y) grid of
-      Just (Tile d1 d2) -> [DRight | d1 == DLeft || d2 == DLeft]
+      Just tile -> [DRight | tile `elem` [TileLR, TileUL, TileDL]]
       _anyOtherTile -> []
 
 replaceStarting :: Grid -> (Grid, (Int, Int))
@@ -104,7 +116,12 @@ replaceStarting grid =
   let startingPos = head [(x, y) | ((x, y), Starting) <- M.toList grid]
       validAdjacentTiles = getValidDirections grid startingPos
       newTile = case validAdjacentTiles of
-        [d1, d2] -> Tile d1 d2
+        [DUp, DDown] -> TileUD
+        [DLeft, DRight] -> TileLR
+        [DUp, DRight] -> TileUR
+        [DUp, DLeft] -> TileUL
+        [DDown, DRight] -> TileDR
+        [DDown, DLeft] -> TileDL
         _anyOtherDirections -> error "Invalid starting tile"
    in (M.insert startingPos newTile grid, startingPos)
 
@@ -116,11 +133,21 @@ parseInput t =
 
 -- * Main
 
+getInitialDirection :: Grid -> (Int, Int) -> Direction
+getInitialDirection grid (x, y) =
+  case grid M.! (x, y) of
+    -- Arbitrarily pick one of the two directions
+    TileUD -> DUp
+    TileLR -> DLeft
+    TileUR -> DUp
+    TileUL -> DUp
+    TileDR -> DDown
+    TileDL -> DDown
+    _anyOtherTile -> error "Invalid starting tile"
+
 part1 :: Grid -> (Int, Int) -> Int
 part1 grid starting =
-  let initialDirection = case grid M.! starting of
-        Tile d1 _ -> d1
-        _anyOtherTile -> error "Invalid starting tile"
+  let initialDirection = getInitialDirection grid starting
       trajectory = iterate (move grid) (initialDirection, starting)
       loopSizeExcludingStart = length $ takeWhile (\(_, crd) -> crd /= starting) $ tail trajectory
    in (loopSizeExcludingStart + 1) `div` 2
@@ -128,48 +155,61 @@ part1 grid starting =
 -- Version of the grid which only retains info about whether a tile is part of
 -- the main loop or not
 
-data SimplifiedTile = MainLoop | AnythingElse deriving (Show, Eq)
+data SimplifiedTile = MainLoop Tile | AnythingElse deriving (Show, Eq)
 
 type SimplifiedGrid = Map (Int, Int) SimplifiedTile
 
 simplifyGrid :: Grid -> (Int, Int) -> SimplifiedGrid
 simplifyGrid grid starting =
-  let initialDirection = case grid M.! starting of
-        Tile d1 _ -> d1
-        _anyOtherTile -> error "Invalid starting tile"
+  let initialDirection = getInitialDirection grid starting
       trajectory = iterate (move grid) (initialDirection, starting)
       loopCoordinatesExcludingStart = map snd $ takeWhile (\(_, crd) -> crd /= starting) $ tail trajectory
       loopCoordinates = starting : loopCoordinatesExcludingStart
-   in M.mapWithKey (\crd _ -> if crd `elem` loopCoordinates then MainLoop else AnythingElse) grid
+   in M.mapWithKey (\crd tile -> if crd `elem` loopCoordinates then MainLoop tile else AnythingElse) grid
+
+-- | Whether we're 'inside' or 'outside' the main loop
+data LoopState = Inside Tile | InsideNested Tile LoopState | Outside deriving (Show, Eq)
 
 part2 :: SimplifiedGrid -> Int
-part2 grid = sum $ traceShowId $ map countCellsInLoopPerLine gridRows
-  where
-    gridRows = map (map snd) $ groupOn (\((x, _), _) -> x) $ M.toList grid
-    countCellsInLoopPerLine :: [SimplifiedTile] -> Int
-    countCellsInLoopPerLine tiles =
-      let evenNumberOfWalls =
-            traceShowId . even . fst $
-              foldl'
-                ( \(acc, prevTile) tile ->
-                    if tile == MainLoop && prevTile == AnythingElse then (acc + 1, tile) else (acc, tile)
-                )
-                (0, AnythingElse)
-                tiles
-       in (\(acc, _, _) -> acc) $
-            foldl'
-              ( \(acc, mainLoopSegmentsSeen, prevTile) tile ->
-                  case (tile, even mainLoopSegmentsSeen, prevTile) of
-                    (MainLoop, _, MainLoop) -> (acc, mainLoopSegmentsSeen, tile)
-                    (MainLoop, _, AnythingElse) -> (acc, mainLoopSegmentsSeen + 1, tile)
-                    (AnythingElse, True, _) -> (if evenNumberOfWalls then acc else acc + 1, mainLoopSegmentsSeen, tile)
-                    (AnythingElse, False, _) -> (if evenNumberOfWalls then acc + 1 else acc, mainLoopSegmentsSeen, tile)
-              )
-              (0, 0, AnythingElse)
-              tiles
+part2 grid =
+  let gridRows = map (map snd) $ groupOn (\((x, _), _) -> x) $ M.toList grid
+      countInnerCells :: [SimplifiedTile] -> Int
+      countInnerCells tiles =
+        fst $
+          foldl'
+            ( \(acc, state) tile ->
+                case (tile, state) of
+                  -- LR/UD, same as above, this part just keeps track of the
+                  -- state
+                  (MainLoop TileLR, Outside) -> (acc, Inside TileLR)
+                  (MainLoop TileLR, Inside _) -> (acc, Outside)
+                  (MainLoop TileUD, st) -> (acc, st)
+                  -- Beginning of a DR/DL
+                  (MainLoop TileDR, Outside) -> (acc, Inside TileDR)
+                  (MainLoop TileDL, Outside) -> (acc, Inside TileDL)
+                  (MainLoop TileDR, insideSt) -> (acc, InsideNested TileDR insideSt)
+                  (MainLoop TileDL, insideSt) -> (acc, InsideNested TileDL insideSt)
+                  -- Ending of a DR/DL
+                  (MainLoop TileUR, InsideNested TileDR st) -> (acc, st)
+                  (MainLoop TileUR, InsideNested TileDL st) -> (acc, Outside)
+                  (MainLoop TileUR, Inside TileDR) -> (acc, Outside)
+                  (MainLoop TileUR, st) -> (acc, st)
+                  (MainLoop TileUL, InsideNested TileDL st) -> (acc, st)
+                  (MainLoop TileUL, InsideNested TileDR st) -> (acc, Outside)
+                  (MainLoop TileUL, Inside TileDL) -> (acc, Outside)
+                  (MainLoop TileUL, st) -> (acc, st)
+                  (MainLoop t, Inside _) -> (acc, Inside t)
+                  -- The real bits we want to count
+                  (AnythingElse, Inside _) -> (acc + 1, state)
+                  (AnythingElse, Outside) -> (acc, state)
+            )
+            (0, Outside)
+            tiles
+      innerCells = traceShowId $ map countInnerCells gridRows
+   in sum innerCells
 
 main :: IO ()
 main = do
-  (grid, starting) <- parseInput <$> T.readFile "example.txt"
+  (grid, starting) <- parseInput <$> T.readFile "input.txt"
   print $ part1 grid starting
   print $ part2 $ simplifyGrid grid starting
