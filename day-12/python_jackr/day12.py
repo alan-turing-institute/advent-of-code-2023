@@ -1,97 +1,85 @@
-from copy import deepcopy
+from functools import cache
 from time import time
 
 
 def parse_data(file) -> (list[list[str]], list[int]):
     lines = file.read().splitlines()
-    springs = []
-    group_counts = []
+    records = []
     for line in lines:
-        spr, grp = line.split()
-        springs.append(list(spr))
-        group_counts.append([int(g) for g in grp.split(",")])
-    return springs, group_counts
+        springs, groups = line.split()
+        groups = tuple(int(g) for g in groups.split(","))
+        records.append((springs, groups))
+    return records
 
 
-def get_groups(springs: list) -> list:
-    # "".join(springs) converts springs to a str
-    # list(filter(None, x.split(".")) drops empty strings after the split (due to
-    # multiple '.' in a row)
-    return list(filter(None, "".join(springs).split(".")))
+@cache
+def count_arrangements(springs, required_groups, curr_group_size):
+    # End condition: Reached the end of the springs string
+    if len(springs) == 0:
+        if len(required_groups) == 0:
+            # correct if no more groups required to match record and no group currently
+            # in progress
+            return curr_group_size == 0
+        elif len(required_groups) == 1:
+            # correct if one more group required and group currently in progress is of
+            # that size
+            return curr_group_size == required_groups[0]
+        else:
+            # didn't fill all the required groups
+            return False
+
+    # End condition: no valid solutions if we need no more groups but have # remaining
+    if len(required_groups) == 0 and "#" in springs:
+        return False
+
+    # Continue the search
+    count = 0
+    if springs[0] == ".":
+        if curr_group_size > 0:
+            # this is the end of a group
+            if len(required_groups) > 0 and curr_group_size == required_groups[0]:
+                # the created group was of the right size, so continue the search to
+                # look for the next group in the remaining springs record
+                count += count_arrangements(springs[1:], required_groups[1:], 0)
+            # else:
+            #   group created was the wrong size so no correct solutions to count
+
+        else:
+            # keep looking for the start of the next group
+            count += count_arrangements(springs[1:], required_groups, 0)
+
+    elif springs[0] == "#":
+        # increases the size of the current group by one
+        count += count_arrangements(springs[1:], required_groups, curr_group_size + 1)
+
+    else:
+        # symbol is ?, count the valid arrangements for the two possibilities
+        count += count_arrangements("#" + springs[1:], required_groups, curr_group_size)
+        count += count_arrangements("." + springs[1:], required_groups, curr_group_size)
+
+    return count
 
 
-def count_groups(groups):
-    return [len(g) for g in groups]
-
-
-def permutations(spring, n_damaged):
-    candidates = [spring]
-    for idx in range(len(spring)):
-        if spring[idx] == "?":
-            new_candidates = []
-            for c in candidates:
-                if c.count("#") < n_damaged:
-                    states = ["#", "."]
-                else:
-                    states = ["."]
-                for state in states:
-                    new_c = deepcopy(c)
-                    new_c[idx] = state
-                    new_candidates.append(new_c)
-            candidates = new_candidates
-
-    return candidates
-
-
-def part_1(springs, group_counts):
+def part_1(records):
     t = time()
-    total = 0
-    for idx, vals in enumerate(zip(springs, group_counts)):
-        spring, exp_groups = vals
-        n_damaged = sum(exp_groups)
-
-        for p in permutations(spring, n_damaged):
-            act_groups = count_groups(get_groups(p))
-            if act_groups == exp_groups:
-                total += 1
-
-    print("Part 1:", total, time() - t)
+    print(
+        "Part 1:",
+        sum(count_arrangements(r[0], r[1], 0) for r in records),
+        f"(took {time() - t:.4f}s)",
+    )
 
 
-def part_1_2(springs, group_counts):
+def part_2(records):
     t = time()
-    total = 0
-    for idx, vals in enumerate(zip(springs, group_counts)):
-        spring, exp_counts = vals
-        groups = get_groups(spring)
-        exp_n_damaged = sum(exp_counts)
-        exp_n_groups = len(exp_counts)
-        print(spring)
-        print(groups)
-        print(exp_n_damaged)
-        print(exp_n_groups)
-
-    print("Part 1:", total, time() - t)
-
-
-def part_2(springs, group_counts):
-    t = time()
-    total = 0
-    for idx, vals in enumerate(zip(springs, group_counts)):
-        spring, exp_groups = vals
-        spring *= 5
-        exp_groups *= 5
-        print(idx)
-        n_damaged = sum(exp_groups)
-        for p in permutations(spring, n_damaged):
-            act_groups = count_groups(get_groups(p))
-            if act_groups == exp_groups:
-                total += 1
-    print("Part 2:", time() - t)
+    print(
+        "Part 2:",
+        sum(count_arrangements("?".join([r[0]] * 5), r[1] * 5, 0) for r in records),
+        f"(took {time() - t:.4f}s)",
+    )
 
 
 if __name__ == "__main__":
     with open("input.txt") as f:
-        springs, group_counts = parse_data(f)
-    part_1(springs, group_counts)
-    #  part_2(springs, group_counts)
+        records = parse_data(f)
+    part_1(records)
+    part_2(records)
