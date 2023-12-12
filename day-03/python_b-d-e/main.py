@@ -64,5 +64,28 @@ def part_one(data):
     print("Part one: " + str(total))
 
 
-data = load_data('input.txt')
+def part_two(data):
+    gear_ratio_sum = 0
+    grid_width = len(data[0])
+    grid_height = len(data)
+    for x in range(len(data)):
+        for y in range(len(data[0])):
+            if data[x][y]=="*":
+                # gear found: check surrounding
+                # get 3x3 region around gear
+                part_numbers = []
+                for i in range(-1,1):
+                    for j in range(-1,1):
+                        if (i==0 and y==0) or x+i < 0 or x+i >= grid_width or y+j < 0 or y+j >= grid_height:
+                            continue
+                        else:
+                            print(i)
+                            print(j)
+                            if data[x+i][y+j].isdigit():
+                                print(data[x+i][y+j])
+    print("Part two: " + str(gear_ratio_sum))
+
+
+data = load_data('example_input.txt')
 part_one(data)
+part_two(data)
