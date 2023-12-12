@@ -19,30 +19,8 @@ def part_one(cards):
 
 
 def part_two(cards):
-    # There's no such thing as "points". Instead, scratchcards only cause you to win more scratchcards equal to the number of winning numbers you have.
-
-    # Specifically, you win copies of the scratchcards below the winning card equal to the number of matches. So, if card 10 were to have 5 matching numbers, you would win one copy each of cards 11, 12, 13, 14, and 15.
-
-    # def calculate_card_score_recursive(i):
-    #     num_matches = 0
-    #     card = cards[i]
-    #     for candidate in card[1]:
-    #         if candidate != "":
-    #             if candidate in card[0]:
-    #                 num_matches += 1
-    #     recursed_matches_total = 0
-    #     for j in range(i+1, i+num_matches+1):
-    #         recursed_matches_total += calculate_card_score_recursive(j)
-    #     return num_matches + recursed_matches_total
-
-    # total = 0
-
     card_multiplier = [1] * len(cards)
-
     for i in range(len(cards)):
-        # score = calculate_card_score_recursive(i)
-        # print(i+1, score)
-        # total += score
         num_matches = 0
         card = cards[i]
         for candidate in card[1]:
