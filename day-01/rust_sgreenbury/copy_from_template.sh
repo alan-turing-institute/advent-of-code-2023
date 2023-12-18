@@ -20,7 +20,6 @@ mkdir -p  $DEST_PATH_WITH_SUBPATH
 
 # Sync minimal files for the day
 rsync -azvu \
-    --include data/inputs/$DAY.txt \
     --include data/examples/$DAY.txt \
     --include bin/$DAY.rs \
     --include helpers.rs \
