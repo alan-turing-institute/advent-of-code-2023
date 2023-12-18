@@ -5,16 +5,6 @@ def parse_data(file):
     return file.read().splitlines()
 
 
-def print_visited(visited):
-    for r in visited:
-        for c in r:
-            if c:
-                print("#", end="")
-            else:
-                print(".", end="")
-        print()
-
-
 def get_energy(entry, grid):
     nrow = len(grid)
     ncol = len(grid[0])
