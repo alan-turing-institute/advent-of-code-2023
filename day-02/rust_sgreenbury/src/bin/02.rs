@@ -1,8 +1,16 @@
-advent_of_code::solution!(2);
-
 use anyhow::anyhow;
 use hashbrown::HashMap;
 use std::str::FromStr;
+
+#[cfg(not(feature = "minimal"))]
+advent_of_code::solution!(2);
+
+#[cfg(feature = "minimal")]
+fn main() {
+    let input = std::fs::read_to_string(format!("data/inputs/{0:02}.txt", 2)).unwrap();
+    println!("{}", part_one(&input).unwrap());
+    println!("{}", part_two(&input).unwrap());
+}
 
 pub fn part_one(input: &str) -> Option<u32> {
     Some(
@@ -85,13 +93,15 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        let result =
+            part_one(&std::fs::read_to_string(format!("data/examples/{0:02}.txt", 2)).unwrap());
         assert_eq!(result, Some(8));
     }
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
+        let result =
+            part_two(&std::fs::read_to_string(format!("data/examples/{0:02}.txt", 2)).unwrap());
         assert_eq!(result, Some(2286));
     }
 }

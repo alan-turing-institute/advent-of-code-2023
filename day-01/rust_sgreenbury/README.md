@@ -2,10 +2,10 @@
 
 Run examples with:
 ```
-cargo test --release
+cargo test --release --features minimal
 ```
 
 And solve inputs with:
 ```
-cargo run --bin 01 --release
+cargo run --bin 01 --release --features minimal
 ```

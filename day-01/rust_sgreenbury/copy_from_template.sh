@@ -25,11 +25,9 @@ rsync -azvu \
     --include bin/$DAY.rs \
     --include helpers.rs \
     --include lib.rs \
-    --include day.rs \
-    --include template/* \
-    --include template/commands/* \
-    --include main.rs \
-    --exclude target/ \
+    --exclude target/\
+    --exclude template/ \
+    --exclude Cargo.lock \
     --exclude *.rs \
     --exclude *.txt \
     --exclude ".*" \
@@ -40,5 +38,5 @@ rsync -azvu \
     $DEST_PATH_WITH_SUBPATH/./
 
 # Make README
-printf "[Solution](src/bin/$DAY.rs) for day $DAY.\n\nRun examples with:\n\`\`\`\ncargo test --release\n\`\`\`\n\nAnd solve inputs with:\n\`\`\`\ncargo run --bin ${DAY} --release\n\`\`\`\n" \
+printf "[Solution](src/bin/$DAY.rs) for day $DAY.\n\nRun examples with:\n\`\`\`\ncargo test --release --features minimal\n\`\`\`\n\nAnd solve inputs with:\n\`\`\`\ncargo run --bin ${DAY} --release --features minimal\n\`\`\`\n" \
     > $DEST_PATH_WITH_SUBPATH/README.md

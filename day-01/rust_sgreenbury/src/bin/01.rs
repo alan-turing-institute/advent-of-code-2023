@@ -1,7 +1,15 @@
 use anyhow::{anyhow, Result};
 use hashbrown::HashMap;
 
+#[cfg(not(feature = "minimal"))]
 advent_of_code::solution!(1);
+
+#[cfg(feature = "minimal")]
+fn main() {
+    let input = std::fs::read_to_string(format!("data/inputs/{0:02}.txt", 1)).unwrap();
+    println!("{}", part_one(&input).unwrap());
+    println!("{}", part_two(&input).unwrap());
+}
 
 pub fn part_one(input: &str) -> Option<u32> {
     solve(input, parse_line_part_1)
@@ -91,7 +99,8 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        let result =
+            part_one(&std::fs::read_to_string(format!("data/examples/{0:02}.txt", 1)).unwrap());
         assert_eq!(result, Some(142));
     }
 
