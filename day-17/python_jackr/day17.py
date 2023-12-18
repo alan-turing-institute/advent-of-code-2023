@@ -1,3 +1,4 @@
+import heapq
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -19,6 +20,12 @@ class Node:
     col: int
     direct: str  # direction entered
     steps: int  # no. steps in this direction so far
+
+    def __lt__(self, other):
+        # just needed in case there are ties in priority on the heapq, in which case
+        # it will try to sort the nodes. Just pick the one closest to bottom right in
+        # that case.
+        return self.row >= other.row and self.col > other.col
 
 
 def get_neighbours(node, nrow, ncol, min_steps, max_steps):
@@ -61,31 +68,29 @@ def is_end(node, nrow, ncol, min_steps, max_steps):
 def dijkstra(grid, min_steps, max_steps):
     # set up some vars
     dist = defaultdict(lambda: sys.maxsize)
-    prev = {}
     nrow = len(grid)
     ncol = len(grid[0])
 
     # one entries for each possible starting direction
-    queue = [Node(0, 0, "R", 0), Node(0, 0, "D", 0)]
+    queue = [(0, Node(0, 0, "R", 0)), (0, Node(0, 0, "D", 0))]
     for q in queue:
-        dist[q] = 0
+        dist[q[1]] = 0
 
     while queue:
         # min distance out of nodes in queue
-        node = min(queue, key=lambda n: dist[n])
+        _, node = heapq.heappop(queue)
+
         if is_end(node, nrow, ncol, min_steps, max_steps):
             # finished
             break
-        else:
-            queue.remove(node)
 
         for new in get_neighbours(node, nrow, ncol, min_steps, max_steps):
             # if new in queue:  # DEBUG
             dist_to_new = dist[node] + grid[new.row][new.col]
             if dist_to_new < dist[new]:
                 dist[new] = dist_to_new
-                prev[new] = node
-                queue.append(new)
+
+                heapq.heappush(queue, (dist[new], new))
 
     return dist[node]
 
@@ -101,7 +106,7 @@ def part_2(grid):
 
 
 if __name__ == "__main__":
-    with open("test_input.txt") as f:
+    with open("input.txt") as f:
         grid = parse_data(f)
     part_1(grid)
     part_2(grid)
