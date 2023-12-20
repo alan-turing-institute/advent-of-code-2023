@@ -1,3 +1,5 @@
+import heapq
+import math
 from copy import deepcopy
 from dataclasses import dataclass
 from time import time
@@ -9,11 +11,15 @@ start = time()
 # ---------------------------------
 
 
-@dataclass
+@dataclass(frozen=True)  # frozen=True makes instances hashable
 class Pulse:
     src: str
     dest: str
     high: bool
+    time: int
+
+    def __lt__(self, other):
+        return self.time < other.time
 
 
 @dataclass
@@ -25,7 +31,10 @@ class FlipFlop:
     def receive(self, pulse) -> list[Pulse]:
         if not pulse.high:
             self.on = not self.on
-            return [Pulse(src=self.name, dest=d, high=self.on) for d in self.dests]
+            return [
+                Pulse(src=self.name, dest=d, high=self.on, time=pulse.time + 1)
+                for d in self.dests
+            ]
         return []
 
 
@@ -41,8 +50,14 @@ class Conjunction:
     def receive(self, pulse) -> list[Pulse]:
         self.memory[pulse.src] = pulse.high
         if all(self.memory[s] for s in self.srcs):
-            return [Pulse(src=self.name, dest=d, high=False) for d in self.dests]
-        return [Pulse(src=self.name, dest=d, high=True) for d in self.dests]
+            return [
+                Pulse(src=self.name, dest=d, high=False, time=pulse.time + 1)
+                for d in self.dests
+            ]
+        return [
+            Pulse(src=self.name, dest=d, high=True, time=pulse.time + 1)
+            for d in self.dests
+        ]
 
 
 @dataclass
@@ -51,7 +66,10 @@ class Broadcast:
     dests: tuple[str]
 
     def receive(self, pulse) -> list[Pulse]:
-        return [Pulse(src=self.name, dest=d, high=pulse.high) for d in self.dests]
+        return [
+            Pulse(src=self.name, dest=d, high=pulse.high, time=pulse.time + 1)
+            for d in self.dests
+        ]
 
 
 @dataclass
@@ -60,7 +78,7 @@ class Button:
     dests: tuple[str] = ("broadcaster",)
 
     def push(self) -> list[Pulse]:
-        return [Pulse(src=self.name, dest=d, high=False) for d in self.dests]
+        return [Pulse(src=self.name, dest=d, high=False, time=0) for d in self.dests]
 
 
 @dataclass
@@ -151,33 +169,49 @@ def part_1(modules):
 # ---------------------------------
 
 
+def find_loop(src, dest, high, modules):
+    # returns the first two times (button pushes and time step within button push)
+    # a high/low (depending on value of high) pulse is sent from src to dest
+    found = []
+    n = 0
+    while len(found) < 2:
+        n += 1
+        pulses = modules["button"].push()
+        while pulses:
+            p = heapq.heappop(pulses)
+
+            for new in modules[p.dest].receive(p):
+                if new.src == src and new.dest == dest and new.high == high:
+                    found.append((n, new.time))
+                heapq.heappush(pulses, new)
+
+    return found
+
+
 def part_2(modules):
     t = time()
-    fz_states = set()
-    fz_states.add(
-        tuple(modules["fz"].memory.values()) + tuple(modules["tf"].memory.values())
-    )
-    n = 0
-    while n < 100000:
-        push(modules)
-        n += 1
-        new_state = tuple(modules["fz"].memory.values()) + tuple(
-            modules["tf"].memory.values()
-        )
-        fz_states.add(new_state)
-    print(fz_states)
-    print(len(fz_states))
-    print("=== n", n, "===")
-    # n = 0
-    # while not modules["rx"].received_low:
-    #     push(modules)
-    #     n += 1
-    #     if n % 100000 == 0:
-    #         print(n)
-    #         print(modules)
-    #         print("---")
 
-    print("Part 2:", n, f"(took {time() - t:.4f}s)")
+    # check when modules of interest send high signals to ql (which would then send
+    # a low signal of all those are true)
+    # see the docstring of the plot function for why these modules are the ones of
+    # interest. I assume there's a neat way of automating the detection of these loops
+    # but the visual/manual approach worked for me!
+    check_modules = ["ss", "fz", "mf", "fh"]
+    dest = "ql"
+    loops = {}
+    for cm in check_modules:
+        loops[cm] = find_loop(cm, dest, True, deepcopy(modules))
+    print(loops)
+    # here I manually checked two things:
+    #  - all the loops states are at the same internal time step within a button press
+    #  - all the loops started at zero (they don't have an offset at the beginning
+    #    before looping). They do so lowest common multiple of the first time the loop
+    #    state appears is fine.
+    print(
+        "Part 2:",
+        math.lcm(*[l[0][0] for l in loops.values()]),
+        f"(took {time() - t:.4f}s)",
+    )
 
 
 def plot(modules):
@@ -186,9 +220,13 @@ def plot(modules):
     From this I noticed (for my input):
     - rx input depends on ql only
     - ql depends on ss, fz, mf, fh
-    - ss, fz, mf, fh are independent of each other
-    So something about checking for repeating loops in the state of ss, fz, mf, fh
-    and then lowest common multiple?
+    - ss, fz, mf, fh are independent of each other (in separated loops with other modules)
+    - ql will send low to rx when the last pulse sent to it by ss, fz, mf, and fh were
+      all high
+    So check for repeating loops when ss, fz, mf, fh send high, then lowest common
+    term in all those series will be the first time rx receives low.
+
+    I've commited the saved visualisation as graph.pdf in the repo.
     """
     import networkx as nx
 
@@ -212,8 +250,10 @@ def plot(modules):
 
 
 if __name__ == "__main__":
-    with open("input.txt") as f:
+    with open(
+        "/Users/jroberts/repos/advent-of-code-2023/day-20/python_jackr/input.txt"
+    ) as f:
         modules = parse_data(f)
-    # plot(modules)
+    # plot(modules) - need networkx, pygraphviz and graphviz installed to run this
     part_1(deepcopy(modules))
     part_2(deepcopy(modules))

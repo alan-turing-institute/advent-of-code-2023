@@ -73,6 +73,7 @@ def dijkstra(grid, min_steps, max_steps):
 
     # one entries for each possible starting direction
     queue = [(0, Node(0, 0, "R", 0)), (0, Node(0, 0, "D", 0))]
+    heapq.heapify(queue)
     for q in queue:
         dist[q[1]] = 0
 
