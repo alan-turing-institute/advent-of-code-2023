@@ -73,15 +73,8 @@ def part_1():
 # ---------------------------------
 # Part 2
 # ---------------------------------
-
-
-# def adjacent(a, b):
-#     delta = (a[0] - b[0], a[1] - b[1])
-#     return delta in deltas
-
-
 def get_neighbours_2(row, col):
-    # grid now infinite
+    # grid now infinite, coordinates wrap round
     neighbours = []
     for d in deltas:
         new_r = row + d[0]
@@ -89,16 +82,18 @@ def get_neighbours_2(row, col):
         if GRID[new_r % NROW][new_c % NCOL] == ".":
             neighbours.append((new_r, new_c))
 
-    # for n1 in neighbours[:-1]:
-    #     for n2 in neighbours[1:]:
-    #         if adjacent(n1, n2):
-    #             grid[n1[0]][n1[1]] = "O"
-    #             grid[n2[0]][n2[1]] = "O"
-    #             break
     return neighbours
 
 
 def part_2():
+    """
+    Not especially satisfied with this one, needed help from some visualisations I found
+    online and I've not fully grasped why just extrapolating is enough, it feels like
+    there should be some edge cases with the rocks where that may not be true.
+    Then for a long time extrapolating wasn't working but it turned out to be an off
+    by one error. That lost me a lot of time as I thought it was an error in the logic
+    of extrapolating.
+    """
     t = time()
     reached = {START}
     print(f"{NROW=}, {NCOL=}")  # the grid is square
@@ -108,11 +103,14 @@ def part_2():
     # steps to reach the edge at the start. From then on every new map is entered from
     # an edge rather than the start, so it takes a full NROW (==NCOL) steps to reach
     # the next map. For the no. steps we're asked for that corresponds to:
-    print("Will reach", (26501365 - RADIUS) / NROW, "maps horizontally and vertically")
+    SPAN = int((26501365 - RADIUS) / NROW)
+    print("Will reach", SPAN, "maps horizontally and vertically")
 
+    # check how many cells we could reach after the first few hundred steps, and
+    # log the ones that correspond to reaching the edges of maps.
     reached_history = []
     steps_history = []
-    for n in range(600):
+    for n in range(600):  # technically only needs to run up to RADIUS + 2*NROW + 1
         if (n - RADIUS) % NROW == 0:
             steps_history.append(n)
             reached_history.append(len(reached))
@@ -121,52 +119,28 @@ def part_2():
             new.update(get_neighbours_2(r[0], r[1]))
         reached = new
 
-        # cnt1 = 0
-        # cnt2 = 0
-        # for r in reached:
-        #     if 0 <= r[0] < NROW and 0 <= r[1] < NCOL:
-        #         cnt1 += 1
-        #     if 0 <= r[0] < NROW and NCOL <= r[1] < 2 * NCOL:
-        #         cnt2 += 1
-    print(steps_history)
-    print(reached_history)
+    # Then fit a quadratic to it and extrapolate. Quadratic as the max possible area
+    # grows as a square, and extrapolating works as the map cells make a repeating
+    # pattern.
+    # I allowed myself the luxury of numpy's quadratic fitting here...
+    print(f"{steps_history=}")
+    print(f"{reached_history=}")
     n_grids = list(range(len(steps_history)))
-    coeffs = np.polyfit(n_grids, reached_history, 2)
-    coeffs = np.round(coeffs).astype(int)
-    print(coeffs)
-    # plt.plot(n_grids, reached_history, "b")
-    # plt.plot(n_grids, np.polyval(coeffs, n_grids), "r")
+    coeffs, resid, *_ = np.polyfit(n_grids, reached_history, 2, full=True)
+    print(f"{resid=}")
+    print(f"{coeffs=}")
+    coeffs = np.round(coeffs).astype(int)  # to avoid any floating point errors
+
+    # # sanity check plot to show it is quadratic
+    # plt.plot(n_grids, reached_history, "o")
+    # plt.plot(n_grids, np.polyval(coeffs, n_grids))
     # plt.show()
 
-    # plt.scatter(*zip(*list(reached_history[-1])))
-    # plt.show()
-    # print(counts1)
-    # print("---")
-    # print(counts2)
-    # print("---")
-    # print(counts1.index(7307))
-    # print(counts2.index(7307))
-    # for r in reached:
-    #     grid[r[0]][r[1]] = "O"
-    for n in [
-        0,
-        1,
-        2,
-        3,
-        4,
-        202300,
-    ]:  # [6, 10, 50, 100, 500, 1000, 26501365]:
-        print(n, coeffs[0] * n**2 + coeffs[1] * n + coeffs[2])
-
-    # ratio = 0
-    # for r in GRID:
-    #     for c in r:
-    #         ratio += c == "."
-    # ratio /= NROW * NCOL
-    # n = 1000
-    # print(ratio * ((n * 2 + 1) ** 2))
-
-    print("Part 2:", f"(took {time() - t:.4f}s)")
+    print(
+        "Part 2:",
+        coeffs[0] * SPAN**2 + coeffs[1] * SPAN + coeffs[2],
+        f"(took {time() - t:.4f}s)",
+    )
 
 
 if __name__ == "__main__":
