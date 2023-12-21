@@ -250,9 +250,7 @@ def plot(modules):
 
 
 if __name__ == "__main__":
-    with open(
-        "/Users/jroberts/repos/advent-of-code-2023/day-20/python_jackr/input.txt"
-    ) as f:
+    with open("input.txt") as f:
         modules = parse_data(f)
     # plot(modules) - need networkx, pygraphviz and graphviz installed to run this
     part_1(deepcopy(modules))
