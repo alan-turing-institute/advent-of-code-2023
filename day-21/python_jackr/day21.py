@@ -1,4 +1,3 @@
-from copy import deepcopy
 from time import time
 
 import matplotlib.pyplot as plt
@@ -6,11 +5,10 @@ import numpy as np
 
 start = time()
 
+
 # ---------------------------------
 # Parsing
 # ---------------------------------
-
-
 def parse_data(f):
     # grid is True if garden plot, False if rock
     grid = []
@@ -24,19 +22,7 @@ def parse_data(f):
     return grid, start
 
 
-def print_grid(grid, start):
-    for ir, row in enumerate(grid):
-        for ic, col in enumerate(row):
-            if (ir, ic) == start:
-                print("S", end="")
-            else:
-                print(col, end="")
-        print()
-
-
-with open(
-    "/Users/jroberts/repos/advent-of-code-2023/day-21/python_jackr/input.txt"
-) as f:
+with open("input.txt") as f:
     GRID, START = parse_data(f)
 NROW = len(GRID)
 NCOL = len(GRID[0])
