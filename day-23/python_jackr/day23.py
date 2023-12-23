@@ -8,11 +8,17 @@ from time import time
 start = time()
 
 
-@dataclass(frozen=True)
+@dataclass  # (frozen=True)
 class Node:
     row: int
     col: int
     kind: str
+    steps: int = 1
+
+    def __post_init__(self):
+        self.children: list[Node] = []
+        self.distance: int = 0  # distance to end (to be filled later)
+        self.visited: bool = False
 
     def __lt__(self, other):
         # just needed in case there are ties in priority on the heapq, in which case
@@ -38,6 +44,62 @@ with open(
     GRID = parse_data(f)
 NROW = len(GRID)
 NCOL = len(GRID[0])
+
+
+def build_graph():
+    queue = [GRID[0][1]]
+    graph = []
+    while queue:
+        current = queue.pop()
+        if current not in graph:
+            graph.append(current)
+            neighbours = get_neighbours(current, graph, check_slopes=False)
+            current.children += neighbours
+            queue += neighbours
+
+    print(len(graph))
+    print()
+
+    while any(len(n.children) == 1 for n in graph):
+        for v in graph:
+            if len(v.children) == 1:
+                for c in v.children:
+                    c.steps += v.steps
+                graph.remove(v)
+                break
+
+    return graph
+
+
+def backfill_distance():
+    queue = [GRID[NROW - 1][NCOL - 2]]
+    while queue:
+        current = queue.pop()
+        for p in current.parents:
+            p.distance = current.distance + 1
+            queue.append(p)
+    return GRID[0][1].distance
+
+
+def dijkstra():
+    queue = [GRID[NROW - 1][NCOL - 2]]
+
+    while queue:
+        # node = queue.pop()
+        node = min(queue, key=lambda n: n.distance)
+        queue.remove(node)
+
+        # if node.row == 0 and node.col == 1:
+        #     # finished
+        #     break
+
+        for new in node.parents:
+            dist_to_new = node.distance - 1
+            if dist_to_new < new.distance:
+                new.distance = dist_to_new
+                queue.append(new)
+
+    return GRID[0][1].distance  # node.distance
 
 
 def get_neighbours(node, path, check_slopes=True):
@@ -79,64 +141,26 @@ def get_neighbours(node, path, check_slopes=True):
 def find_paths(check_slopes=True):
     # continue path until next fork
     found = []
-    paths = [(GRID[0][1],)]
+    paths = [(GRID[0][1], set())]
     count = 0
     while paths:
-        p = paths.pop()
+        current, previous = paths.pop()
+        previous = previous.copy()
+        previous.add(current)
         count += 1
-        if p[-1].row == NROW - 1 and p[-1].col == NCOL - 2:
+        if current.row == NROW - 1 and current.col == NCOL - 2:
             # this is the target cell
-            found.append(p)
-            # print_grid(p)
-            # print(
-            #     f"\n---{len(found)} found, {len(paths)} in progress, {count} iterations---\n"
-            # )
-
+            found.append(previous)
+            # print_grid(previous)
+            print(
+                f"{len(found)} found, {len(paths)} in progress, longest {max(len(f) for f in found) - 1}, {count} iterations"
+            )
         else:
-            neighbours = get_neighbours(p[-1], p, check_slopes)
+            neighbours = get_neighbours(current, previous, check_slopes)
             for n in neighbours:
-                paths.append(p + (n,))
+                paths.append((n, previous))
 
     return found
-
-
-def dijkstra():
-    # set up some vars
-    dist = defaultdict(lambda: sys.maxsize)
-
-    # one entries for each possible starting direction
-    queue = [(0, GRID[0][1], (GRID[0][1],))]
-    heapq.heapify(queue)
-    for q in queue:
-        dist[q[1]] = 0
-
-    while queue:
-        # min distance out of nodes in queue
-        _, node, path = heapq.heappop(queue)
-
-        if node.row == NROW - 1 and node.col == NCOL - 2:
-            # finished
-            break
-
-        for new in get_neighbours(node, path):
-            dist_to_new = dist[node] + 1
-            if dist_to_new < dist[new]:
-                dist[new] = dist_to_new
-
-                # minus so max distance comes first
-                heapq.heappush(queue, (dist[new], new, path + (new,)))
-
-    return dist[node]
-
-
-def print_grid(path):
-    pgrid = deepcopy(GRID)
-    for p in path:
-        pgrid[p.row][p.col] = Node(p.row, p.col, "O")
-    for r in pgrid:
-        for c in r:
-            print(c.kind, end="")
-        print()
 
 
 def part_1():
@@ -155,6 +179,8 @@ def part_2():
 
 
 if __name__ == "__main__":
-    part_1()
-    part_2()
+    # part_1()
+    # part_2()
+    print(build_graph())
+    # print(backfill_distance())  # dijkstra()
     print(f"(overall {time() - start:.4f}s)")
