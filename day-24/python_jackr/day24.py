@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from time import time
 
+from z3 import Int, Solver
+
 start = time()
 
 
@@ -27,12 +29,7 @@ def intercept_xy(a: Stone, b: Stone):
     slope_a, intercept_a = a.fit_xy()
     slope_b, intercept_b = b.fit_xy()
 
-    """
-    by = ay
-    bx = ax
-    t > 0
-    """
-
+    # get coordinates a and b trajectories cross
     # m_b*x + c_b = m_a*x + c_a
     if slope_b == slope_a:
         if intercept_a == intercept_b:
@@ -40,23 +37,12 @@ def intercept_xy(a: Stone, b: Stone):
         return False
     x = (intercept_a - intercept_b) / (slope_b - slope_a)
     y = slope_a * x + intercept_a
-    # print(y, slope_b * x + intercept_b)
-    # y = y0 + t * vy
+
+    # get times trajectories cross (don't need to cross at same time)
     t_a = (y - a.y) / a.vy
     t_b = (y - b.y) / b.vy
-    # print(t, (y - b.y) / b.vy)
 
-    # if b.vx != a.vx:
-    #     t_x = (a.x - b.x) / (b.vx - a.vx)
-    # else:
-    #     t_x = 1  # FIXME: /0 fudge
-    # if b.vy != a.vy:
-    #     t_y = (a.y - b.y) / (b.vy - a.vy)
-    # else:
-    #     t_y = 1  # FIXME: /0 fudge
-
-    # print("tx ty", t_x, t_y)
-
+    # return coords if cross in future, else False
     return (x, y) if t_a > 0 and t_b > 0 else False
 
 
@@ -79,76 +65,83 @@ def parse_data(file):
     return stones
 
 
-with open(
-    "/Users/jroberts/repos/advent-of-code-2023/day-24/python_jackr/input.txt"
-) as f:
+with open("input.txt") as f:
     STONES = parse_data(f)
 
 
 def part_1():
-    import matplotlib.pyplot as plt
-    import numpy as np
-
+    t = time()
+    area = (200000000000000, 400000000000000)
     count = 0
     for idx, a in enumerate(STONES[:-1]):
         for b in STONES[(idx + 1) :]:
-            # am, ac = a.fit_xy()
-            # axs = []
-            # ays = []
-            # a_fitys = []
-            # for t in range(1000):
-            #     x, y, z = a.pos(t)
-            #     axs.append(x)
-            #     ays.append(y)
-            #     a_fitys.append(x * am + ac)
-            # plt.plot(axs, ays, "bo")
-            # plt.plot(axs, a_fitys, "b")
-
-            # bm, bc = b.fit_xy()
-            # bxs = []
-            # bys = []
-            # b_fitys = []
-            # for t in range(100):
-            #     x, y, z = b.pos(t)
-            #     bxs.append(x)
-            #     bys.append(y)
-            #     b_fitys.append(x * bm + bc)
-            # plt.plot(bxs, bys, "ro")
-            # plt.plot(bxs, b_fitys, "r")
-
-            # inter_xy = intercept_xy(a, b)
-            # if inter_xy is True:
-            #     count += 1
-            # elif inter_xy is not False:
-            #     plt.plot([x], [y], "X", markersize=20)
-            #     x, y = inter_xy
-            #     if 7 <= x <= 27 and 7 <= y <= 27:
-            #         count += 1
-
-            # plt.show()
-            area = (200000000000000, 400000000000000)
             inter_xy = intercept_xy(a, b)
             if inter_xy:
                 x, y = inter_xy
                 if area[0] <= x <= area[1] and area[0] <= y <= area[1]:
-                    # print("true", a, b, (x, y))
                     count += 1
-                else:
-                    # print("outside", a, b, (x, y))
-                    ...
-            else:
-                # print("false", a, b)
-                ...
-
-    t = time()
 
     print("Part 1:", count, f"(took {time() - t:.4f}s)")
 
 
 def part_2():
+    """
+    I wrote out the system of equation with pen and paper, then needed a hint for how
+    to solve it where the answer seemd to be "chuck it at the z3 library" (the equations
+    have interaction terms so not purely linear).
+
+    Say the rock, r (with init coordinates xr,yr,zr,vxr,vyr,vzr), hits hailstone a
+    (with init coordinates xa,ya,za,vxa,vya,vza), at time ta:
+        - Position of r at ta: (xr + vxr*ta, yr + vyr*tb, zr + vzr*ta)
+        - Position of a at ta: (xa + vxa*ta, ya + vya*ta, za + vza*ta)
+    Set these equal to each other (so x,y,z coord are the same for a collision).
+
+    We need to do this with 3 hailstones (a, b, c) to get 9 equations and 9 unknowns to
+    solve.
+    """
     t = time()
 
-    print("Part 2:", f"(took {time() - t:.4f}s)")
+    a = STONES[0]
+    b = STONES[1]
+    c = STONES[2]
+
+    xa, ya, za, vxa, vya, vza = a.x, a.y, a.z, a.vx, a.vy, a.vz
+    xb, yb, zb, vxb, vyb, vzb = b.x, b.y, b.z, b.vx, b.vy, b.vz
+    xc, yc, zc, vxc, vyc, vzc = c.x, c.y, c.z, c.vx, c.vy, c.vz
+
+    # rock coordinates
+    xr = Int("xr")
+    vxr = Int("vxr")
+    yr = Int("yr")
+    vyr = Int("vyr")
+    zr = Int("zr")
+    vzr = Int("vzr")
+    # time hit a, b, c
+    ta = Int("ta")
+    tb = Int("tb")
+    tc = Int("tc")
+
+    s = Solver()
+    s.add(xr + vxr * ta == xa + vxa * ta)
+    s.add(yr + vyr * ta == ya + vya * ta)
+    s.add(zr + vzr * ta == za + vza * ta)
+
+    s.add(xr + vxr * tb == xb + vxb * tb)
+    s.add(yr + vyr * tb == yb + vyb * tb)
+    s.add(zr + vzr * tb == zb + vzb * tb)
+
+    s.add(xr + vxr * tc == xc + vxc * tc)
+    s.add(yr + vyr * tc == yc + vyc * tc)
+    s.add(zr + vzr * tc == zc + vzc * tc)
+
+    print(s.check())
+    result = s.model()
+
+    print(
+        "Part 2:",
+        result[xr].as_long() + result[yr].as_long() + result[zr].as_long(),
+        f"(took {time() - t:.4f}s)",
+    )
 
 
 if __name__ == "__main__":
